@@ -27,6 +27,25 @@ void App::SetTheme(Theme t) {
     st.WindowRounding = 3.0f;
     st.FrameRounding  = 2.0f;
     st.TabRounding    = 2.0f;
+
+    // Açık sekmelerin paleti temaya ve dil moduna göre güncelle
+    for (auto& tab : tabs)
+        ApplyEditorPalette(tab.editor, tab.langIdx);
+}
+
+// ─── Editör paleti ────────────────────────────────────────────────────────────
+void App::ApplyEditorPalette(TextEditor& editor, int langIdx) {
+    bool dark = (m_theme == Theme::Dark);
+    auto p    = dark ? TextEditor::GetDarkPalette() : TextEditor::GetLightPalette();
+
+    if (langIdx == 6) {  // Düz Metin: tüm syntax renklerini Default'a eşitle
+        ImU32 fg = p[(size_t)TextEditor::PaletteIndex::Default];
+        for (size_t i = (size_t)TextEditor::PaletteIndex::Default;
+                    i <  (size_t)TextEditor::PaletteIndex::Background; ++i)
+            p[i] = fg;
+    }
+
+    editor.SetPalette(p);
 }
 
 // ─── Başlık güncelleme ────────────────────────────────────────────────────────
@@ -132,7 +151,7 @@ void App::Init(SDL_Window* window) {
 
     luaEngine.Init(this);
 
-    // Varsayilan tema uygula
+    // Varsayılan tema uygula (sekme paletlerini de ayarlar)
     SetTheme(m_theme);
 }
 
@@ -235,6 +254,7 @@ void App::DrawMenuBar(bool& running) {
             if (ImGui::MenuItem(kLangNames[i], nullptr, ActiveTab().langIdx == i)) {
                 ActiveTab().langIdx = i;
                 ActiveTab().editor.SetLanguageDefinition(LangByIdx(i));
+                ApplyEditorPalette(ActiveTab().editor, i);
             }
         }
         ImGui::Separator();
@@ -504,6 +524,7 @@ void App::OpenFile(const std::string& path) {
     }
     tabs.emplace_back();
     tabs.back().Load(path);
+    ApplyEditorPalette(tabs.back().editor, tabs.back().langIdx);
     leftActive = (int)tabs.size() - 1;
     wantFocusL = true;
     statusMsg  = "Açıldı: " + path;
