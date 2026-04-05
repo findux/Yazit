@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(cmake --version)",
+      "Read(//d//**)",
+      "Bash(git clone:*)",
+      "Bash(./bootstrap-vcpkg.bat)",
+      "Bash(D:/Uzay/vcpkg/vcpkg.exe version:*)",
+      "Bash(D:/Uzay/src/main.cpp:*)",
+      "Bash(./vcpkg.exe install:*)",
+      "Bash(./vcpkg.exe search:*)",
+      "Bash(cmake -B build)",
+      "Bash(cmake --build build --config Release)",
+      "Bash(cmake -B build -A x64)",
+      "Bash(dumpbin /headers D:/Uzay/build/Release/UzayProject.exe)",
+      "Bash(cmake --build . --config Release)",
+      "Bash(cmake -S D:/Uzay -B D:/Uzay/build -A x64)",
+      "Bash(cmake --build D:/Uzay/build --config Release)",
+      "Bash(python -c \"from PIL import Image; print\\(''PIL OK''\\)\")",
+      "Bash(py --version)",
+      "Bash(where python:*)",
+      "Bash(C:/Users/findu/AppData/Local/Microsoft/WindowsApps/python.exe --version)",
+      "Bash(where magick:*)",
+      "Bash(where convert:*)",
+      "Bash(where ffmpeg:*)",
+      "Bash(powershell -Command \"Get-Command node\")",
+      "Bash(node D:/Uzay/make_icon.js)"
+    ]
+  }
+}
