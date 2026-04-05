@@ -4,6 +4,17 @@ Notepad++ benzeri, SDL2 + Dear ImGui tabanlı bir kod/metin editörü.
 
 ---
 
+## Ekran Görüntüleri
+
+<p align="center">
+  <img src="docs/screenshot1.jpeg" width="900"/>
+</p>
+<p align="center">
+  <img src="docs/screenshot2.jpeg" width="900"/>
+</p>
+
+---
+
 ## Kullanılan Kütüphaneler
 
 | Kütüphane | Sürüm / Kaynak | Açıklama |
