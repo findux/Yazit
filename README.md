@@ -53,4 +53,29 @@ cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="<vcpkg-kök>/scripts/buildsystems/vc
 cmake --build build --config Release
 ```
 
-Çıktı: `build/Release/Yazıt.exe`
+Çıktı: `build/Release/YAZIT.exe`
+
+---
+
+## Lisans
+
+Bu proje **MIT Lisansı** ile lisanslanmıştır. Ayrıntılar için [`LICENSE`](LICENSE) dosyasına bakın.
+
+> **Yasal Uyarı:** Bu yazılım "olduğu gibi" sağlanmaktadır; açık veya zımni hiçbir garanti verilmemektedir.
+> Yazılımın kullanımından doğabilecek herhangi bir zarar, veri kaybı veya başka bir sorun için
+> geliştiriciler sorumlu tutulamaz. Kullanım riski tamamen kullanıcıya aittir.
+
+---
+
+## Üçüncü Taraf Bileşenler
+
+YAZIT çeşitli açık kaynak kütüphaneler kullanmaktadır. Bu kütüphanelerin lisans metinleri için
+[`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md) dosyasına bakın.
+
+| Kütüphane | Lisans |
+|-----------|--------|
+| SDL2 | zlib |
+| Dear ImGui | MIT |
+| ImGuiColorTextEdit | MIT |
+| Lua | MIT |
+| GLEW | Modified BSD |

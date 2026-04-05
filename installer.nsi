@@ -31,7 +31,11 @@ SetCompressor     /SOLID lzma
 !define MUI_FINISHPAGE_RUN       "$INSTDIR\${APP_EXE}"
 !define MUI_FINISHPAGE_RUN_TEXT  "YAZIT'i şimdi başlat"
 
+!define MUI_LICENSEPAGE_CHECKBOX
+!define MUI_LICENSEPAGE_CHECKBOX_TEXT "Lisans koşullarını okudum ve kabul ediyorum."
+
 !insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH

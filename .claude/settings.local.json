@@ -50,7 +50,8 @@
       "Bash(ls \"/c/Program Files \\(x86\\)/NSIS/makensis.exe\")",
       "Bash(\"/c/Program Files \\(x86\\)/NSIS/makensis.exe\" -inputcharset UTF8 installer.nsi)",
       "Bash(cp \"D:/Downloads/WhatsApp Image 2026-04-05 at 21.13.35.jpeg\" D:/Yazit/docs/screenshot1.jpeg)",
-      "Bash(cp \"D:/Downloads/WhatsApp Image 2026-04-05 at 21.15.50.jpeg\" D:/Yazit/docs/screenshot2.jpeg)"
+      "Bash(cp \"D:/Downloads/WhatsApp Image 2026-04-05 at 21.15.50.jpeg\" D:/Yazit/docs/screenshot2.jpeg)",
+      "Bash(ls D:/Yazit/src/ImGuiColorTextEdit/*.md)"
     ]
   }
 }
