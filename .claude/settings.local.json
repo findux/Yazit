@@ -37,7 +37,8 @@
       "Read(//c/Program Files/NSIS/**)",
       "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" installer.nsi)",
       "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" /inputcharset UTF8 installer.nsi)",
-      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" -inputcharset UTF8 installer.nsi)"
+      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" -inputcharset UTF8 installer.nsi)",
+      "Bash(powershell -Command \"Remove-Item ''D:/Yazit/YAZIT-1.0.0-Setup.exe'' -Force -ErrorAction SilentlyContinue; & ''C:/Program Files \\(x86\\)/NSIS/makensis.exe'' ''-inputcharset'' ''UTF8'' ''D:/Yazit/installer.nsi''\")"
     ]
   }
 }
