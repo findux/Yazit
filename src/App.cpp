@@ -224,6 +224,19 @@ void App::DrawMenuBar(bool& running) {
                 { leftActive = i; wantFocusL = true; }
         }
         ImGui::Separator();
+        // ── Kodlama alt menüsü ──────────────────────────────────────────────
+        if (ImGui::BeginMenu("Kodlama")) {
+            ImGui::TextDisabled("Mevcut: %s", ActiveTab().EncodingName());
+            ImGui::Separator();
+            if (ImGui::MenuItem("ANSI",        nullptr, ActiveTab().encoding == Encoding::ANSI))
+                ActiveTab().SetEncoding(Encoding::ANSI);
+            if (ImGui::MenuItem("UTF-8",       nullptr, ActiveTab().encoding == Encoding::UTF8))
+                ActiveTab().SetEncoding(Encoding::UTF8);
+            if (ImGui::MenuItem("UTF-8 BOM",   nullptr, ActiveTab().encoding == Encoding::UTF8_BOM))
+                ActiveTab().SetEncoding(Encoding::UTF8_BOM);
+            ImGui::EndMenu();
+        }
+        ImGui::Separator();
         if (ImGui::MenuItem("Çıkış", "Alt+F4")) running = false;
         ImGui::EndMenu();
     }
@@ -417,10 +430,11 @@ void App::DrawStatusBar() {
     ImGui::BeginChild("##status", {0, 22.0f}, false, ImGuiWindowFlags_NoScrollbar);
     ImGui::SetCursorPosY(3);
     auto cp = ActiveTab().editor.GetCursorPosition();
-    ImGui::Text("  Satir: %d  Sutun: %d  |  %s  |  %s  |  %s  |  %s",
+    ImGui::Text("  Satir: %d  Sutun: %d  |  %s  |  %s  |  %s  |  %s  |  %s",
         cp.mLine + 1, cp.mColumn + 1,
         ActiveTab().editor.IsOverwrite() ? "OVR" : "INS",
         kLangNames[ActiveTab().langIdx],
+        ActiveTab().EncodingName(),
         ActiveTab().modified ? "*Degistirildi" : "Kaydedildi",
         statusMsg.c_str());
     ImGui::EndChild();
@@ -668,8 +682,16 @@ void App::OpenFileWithDialog() {
 
 void App::SaveActive() {
     if (!ActiveTab().path.empty()) {
-        ActiveTab().Save();
-        statusMsg = "Kaydedildi: " + ActiveTab().path;
+        std::string err;
+        if (ActiveTab().Save(&err)) {
+            char buf[512];
+            snprintf(buf, sizeof(buf), "Kaydedildi [%s]: %s",
+                     ActiveTab().EncodingName(), ActiveTab().path.c_str());
+            statusMsg = buf;
+            if (!err.empty()) statusMsg += "  |  " + err;  // lossy uyarısı
+        } else {
+            statusMsg = "HATA: " + (err.empty() ? "Kayit basarisiz." : err);
+        }
     } else {
         SaveActiveAs();
     }
@@ -682,8 +704,17 @@ void App::SaveActiveAs() {
         ActiveTab().name = EditorTab::Basename(p);
         ActiveTab().langIdx = LangIdxFromPath(p);
         ActiveTab().editor.SetLanguageDefinition(LangByIdx(ActiveTab().langIdx));
-        ActiveTab().Save();
-        statusMsg = "Kaydedildi: " + p;
+        ApplyEditorPalette(ActiveTab().editor, ActiveTab().langIdx);
+        std::string err;
+        if (ActiveTab().Save(&err)) {
+            char buf[512];
+            snprintf(buf, sizeof(buf), "Kaydedildi [%s]: %s",
+                     ActiveTab().EncodingName(), p.c_str());
+            statusMsg = buf;
+            if (!err.empty()) statusMsg += "  |  " + err;
+        } else {
+            statusMsg = "HATA: " + (err.empty() ? "Kayit basarisiz." : err);
+        }
     }
 }
 

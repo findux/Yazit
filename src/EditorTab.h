@@ -1,6 +1,12 @@
 #pragma once
 #include <string>
+#include <vector>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
 #include "TextEditor.h"
+
+enum class Encoding { ANSI, UTF8, UTF8_BOM };
 
 // Desteklenen diller
 static const char* kLangNames[] = {
@@ -44,11 +50,20 @@ public:
     TextEditor  editor;
     bool        modified = false;
     int         langIdx  = 0;
+    Encoding    encoding = Encoding::UTF8;
 
     EditorTab();
     void Load(const std::string& filePath);
-    void Save();
+    bool Save(std::string* outError = nullptr); // false + hata mesajı döner
+    void SetEncoding(Encoding newEnc);  // dönüştür + işaretle
+
+    const char* EncodingName() const;
 
     static std::string Basename(const std::string& p);
+
+private:
+    static bool        IsLikelyAnsi(const std::string& raw);
+    static std::string AnsiToUtf8  (const std::string& ansi);
+    static std::string Utf8ToAnsi  (const std::string& utf8, bool* lossyOut = nullptr);
 };
 
