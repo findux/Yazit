@@ -41,7 +41,7 @@ add_executable(${PROJECT_NAME} WIN32
     src/app.rc
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Yazıt")
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Yazit")
 
 # ── Include yolları ───────────────────────────────────────────────────────────
 target_include_directories(${PROJECT_NAME} PRIVATE

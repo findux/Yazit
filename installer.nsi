@@ -5,7 +5,7 @@
 Unicode True
 
 !define APP_NAME      "Yazit"
-!define APP_EXE       "Yazıt.exe"
+!define APP_EXE       "Yazit.exe"
 !define APP_VERSION   "1.0.0"
 !define APP_PUBLISHER "Yazit"
 !define INSTALL_DIR   "$PROGRAMFILES64\${APP_NAME}"
@@ -61,6 +61,10 @@ Section "Ana Program" SecMain
   CreateShortcut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\app.ico"
   CreateShortcut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\app.ico"
 
+  ; ── App Paths kaydı (Windows'un exe'yi her zaman bulmasını sağlar) ────────
+  WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}" ""      "$INSTDIR\${APP_EXE}"
+  WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}" "Path"  "$INSTDIR"
+
   ; ── Sağ tık menüsü: tüm dosyalar ──────────────────────────────────────────
   WriteRegStr HKCR "*\shell\${APP_NAME}"         ""      "Yazit ile Aç"
   WriteRegStr HKCR "*\shell\${APP_NAME}"         "Icon"  "$INSTDIR\app.ico"
@@ -97,6 +101,7 @@ Section "Uninstall"
   ; Kayıt defteri kayıtlarını temizle
   DeleteRegKey HKLM "Software\${APP_NAME}"
   DeleteRegKey HKLM "${REG_UNINSTALL}"
+  DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}"
 
   ; Kısayolları sil
   Delete "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"
