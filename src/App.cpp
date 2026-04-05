@@ -5,6 +5,7 @@
 #include <imgui_impl_opengl3.h>
 #include "imgui_impl_sdl2.h"
 #include <cstdio>
+#include <set>
 
 // ─── Tema ─────────────────────────────────────────────────────────────────────
 void App::SetTheme(Theme t) {
@@ -173,8 +174,12 @@ void App::Draw(bool& running) {
     DrawMenuBar(running);
 
     const float statusH  = 22.0f;
+    const float resultsH = m_showResults ? m_resultsHeight : 0.0f;
     ImVec2 area = ImGui::GetContentRegionAvail();
-    area.y -= statusH;
+    area.y -= statusH + resultsH;
+
+    // ItemSpacing = 0 → paneller arası boşluk sıfır, taşma olmaz
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
     if (splitMode) {
         float half = area.x * 0.5f - 1.0f;
@@ -189,7 +194,10 @@ void App::Draw(bool& running) {
         DrawPanel("L", leftActive, area, wantFocusL);
     }
 
+    if (m_showResults) DrawResultsPanel();
     DrawStatusBar();
+
+    ImGui::PopStyleVar(); // ItemSpacing
     ImGui::End();
 
     DrawFindWindow();
@@ -386,20 +394,16 @@ void App::DrawFindWindow() {
         findState.FindNext(tabs[leftActive], !findState.searchDown);
     if (findState.showReplace) {
         ImGui::SameLine();
-        if (ImGui::Button("Degistir") && valid)          findState.ReplaceNext(tabs[leftActive]);
+        if (ImGui::Button("Degiştir") && valid)          findState.ReplaceNext(tabs[leftActive]);
         ImGui::SameLine();
-        if (ImGui::Button("Tumunu Degistir") && valid) {
+        if (ImGui::Button("Tümünü Değiştir") && valid) {
             int n = findState.ReplaceAll(tabs[leftActive]);
             snprintf(findState.msg, sizeof(findState.msg), "%d yer degistirildi.", n);
         }
     }
-    if (ImGui::Button("Tum Dosyalarda Say")) {
-        int total = 0;
-        for (auto& t : tabs)
-            total += (int)findState.FindAll(t.editor.GetText()).size();
-        snprintf(findState.msg, sizeof(findState.msg),
-            "Toplam %d eslesme (%d dosya).", total, (int)tabs.size());
-    }
+    if (ImGui::Button("Aktif Dosyada Bul")) SearchInTabs(true);
+    ImGui::SameLine();
+    if (ImGui::Button("Tüm Dosyalarda Bul")) SearchInTabs(false);
     if (findState.msg[0]) {
         ImGui::Separator();
         ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "%s", findState.msg);
@@ -433,7 +437,7 @@ void App::DrawLuaWindow() {
     if (ImGui::Button("Çaliştir (F5)"))
         luaEngine.Execute(m_luaEditor.GetText());
     ImGui::SameLine();
-    if (ImGui::Button("Çiktıyı Temizle")) luaEngine.ClearOutput();
+    if (ImGui::Button("Çıktıyı Temizle")) luaEngine.ClearOutput();
     ImGui::SameLine();
 
     // Hızlı başvuru
@@ -521,6 +525,115 @@ void App::HandleShortcuts(bool& running) {
     }
 }
 
+// ─── Dosyalarda arama ────────────────────────────────────────────────────────
+void App::SearchInTabs(bool activeOnly) {
+    m_searchResults.clear();
+    int start = activeOnly ? leftActive : 0;
+    int end   = activeOnly ? leftActive + 1 : (int)tabs.size();
+
+    for (int t = start; t < end; t++) {
+        std::string text  = tabs[t].editor.GetText();
+        auto        lines = tabs[t].editor.GetTextLines();
+        auto        all   = findState.FindAll(text);
+
+        // Her satırda yalnızca ilk eşleşmeyi kaydet (satır başvurusu için yeterli)
+        std::set<int> seen;
+        for (auto& m : all) {
+            auto coord = IdxToCoord(text, m.start);
+            if (seen.count(coord.mLine)) continue;
+            seen.insert(coord.mLine);
+
+            std::string ln = (coord.mLine < (int)lines.size())
+                             ? lines[coord.mLine] : "";
+            // Baştaki boşlukları kırp
+            size_t f = ln.find_first_not_of(" \t");
+            if (f != std::string::npos) ln = ln.substr(f);
+
+            m_searchResults.push_back({t, tabs[t].name,
+                                       coord.mLine, coord.mColumn, ln});
+        }
+    }
+    m_showResults = true;
+    snprintf(findState.msg, sizeof(findState.msg),
+             "%d sonuc bulundu.", (int)m_searchResults.size());
+}
+
+// ─── Sonuçlar paneli ─────────────────────────────────────────────────────────
+void App::DrawResultsPanel() {
+    // Yeniden boyutlandırma kolu (ItemSpacing=0 → kol ile child arası boşluk yok)
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.25f, 0.25f, 0.30f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.35f, 0.45f, 1.0f));
+    ImGui::Button("##resizeR", ImVec2(-1, 4));
+    if (ImGui::IsItemActive()) {
+        m_resultsHeight -= ImGui::GetIO().MouseDelta.y;
+        if (m_resultsHeight < 60.0f)  m_resultsHeight = 60.0f;
+        if (m_resultsHeight > 450.0f) m_resultsHeight = 450.0f;
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(2);
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.10f, 0.10f, 0.14f, 1.0f));
+    ImGui::BeginChild("##results", ImVec2(0, m_resultsHeight - 4),
+                      false, ImGuiWindowFlags_HorizontalScrollbar);
+
+    // Başlık satırı
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+    ImGui::TextColored(ImVec4(0.45f, 0.80f, 1.0f, 1.0f),
+                       "  Arama Sonuclari  —  \"%s\"  —  %d eslesme",
+                       findState.find, (int)m_searchResults.size());
+    ImGui::SameLine(ImGui::GetContentRegionAvail().x - 18);
+    if (ImGui::SmallButton("X")) {
+        m_showResults = false;
+        m_searchResults.clear();
+    }
+    ImGui::Separator();
+
+    if (m_searchResults.empty()) {
+        ImGui::TextDisabled("  Sonuc bulunamadi.");
+    } else {
+        // Sütun başlıkları
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+        ImGui::Text("  %-30s  %6s   %s", "Dosya", "Satir", "Icerik");
+        ImGui::PopStyleColor();
+        ImGui::Separator();
+
+        for (int i = 0; i < (int)m_searchResults.size(); i++) {
+            auto& r = m_searchResults[i];
+            char  lbl[1024];
+            snprintf(lbl, sizeof(lbl), "  %-30s  %6d   %s##r%d",
+                     r.tabName.c_str(), r.line + 1, r.lineText.c_str(), i);
+
+            if (ImGui::Selectable(lbl, false,
+                                  ImGuiSelectableFlags_AllowDoubleClick)) {
+                // Sekmeye geç
+                leftActive = r.tabIdx;
+                wantFocusL = true;
+
+                // İmleci satıra ve sütuna taşı, eşleşmeyi seç
+                auto& tab  = tabs[r.tabIdx];
+                std::string text = tab.editor.GetText();
+                auto all = findState.FindAll(text);
+                for (auto& m : all) {
+                    auto c = IdxToCoord(text, m.start);
+                    if (c.mLine == r.line && c.mColumn == r.col) {
+                        auto e = IdxToCoord(text, m.start + m.len);
+                        tab.editor.SetSelection(c, e);
+                        tab.editor.SetCursorPosition(c);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+}
+
 // ─── Sekme yönetimi ──────────────────────────────────────────────────────────
 void App::NewTab() {
     tabs.emplace_back();
@@ -572,6 +685,7 @@ void App::SaveActiveAs() {
         statusMsg = "Kaydedildi: " + p;
     }
 }
+
 
 
 

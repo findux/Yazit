@@ -1,6 +1,14 @@
 #pragma once
 #include <vector>
 #include <string>
+
+struct SearchResult {
+    int         tabIdx;
+    std::string tabName;
+    int         line;       // 0-tabanlı
+    int         col;        // 0-tabanlı (eşleşmenin başı)
+    std::string lineText;   // satır içeriği (kırpılmış)
+};
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -35,6 +43,9 @@ public:
     // ── Editör paleti (langIdx == 6 → düz metin, tüm renkler Default'a eşit) ─
     void ApplyEditorPalette(TextEditor& editor, int langIdx);
 
+    // ── Dosyalarda arama ────────────────────────────────────────────────────
+    void SearchInTabs(bool activeOnly);
+
     // ── Sekme işlemleri ──────────────────���──────────────────────────────────
     void NewTab();
     void OpenFile(const std::string& path);
@@ -58,9 +69,15 @@ private:
     void DrawMenuBar(bool& running);
     void DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus);
     void DrawFindWindow();
+    void DrawResultsPanel();
     void DrawStatusBar();
     void DrawLuaWindow();
     void HandleShortcuts(bool& running);
+
+    // Arama sonuçları
+    std::vector<SearchResult> m_searchResults;
+    bool  m_showResults   = false;
+    float m_resultsHeight = 160.0f;
 
     // Dosya işlemleri (dialog açar)
     void OpenFileWithDialog();
