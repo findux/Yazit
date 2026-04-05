@@ -30,6 +30,19 @@ int main(int argc, char** argv) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+    // imgui.ini dosyasını %APPDATA%\Yazit\ altına yönlendir
+    static std::string iniPath;
+    {
+        char appdata[MAX_PATH];
+        if (GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH)) {
+            std::string dir = std::string(appdata) + "\\Yazit";
+            CreateDirectoryA(dir.c_str(), nullptr);   // yoksa oluştur
+            iniPath = dir + "\\imgui.ini";
+        }
+    }
+    if (!iniPath.empty())
+        io.IniFilename = iniPath.c_str();
+
     // Tema App::Init() içinde SetTheme(Dark) ile uygulanır
 
     // ── Turkce karakter destekli font ────────────────────────────────────────
