@@ -54,9 +54,9 @@ static void UpdateWindowTitle(SDL_Window* win, const EditorTab& tab) {
     char title[512];
     const std::string& display = tab.path.empty() ? tab.name : tab.path;
     if (tab.modified)
-        snprintf(title, sizeof(title), "Yazit - %s *", display.c_str());
+        snprintf(title, sizeof(title), "YAZIT -%s *", display.c_str());
     else
-        snprintf(title, sizeof(title), "Yazit - %s",   display.c_str());
+        snprintf(title, sizeof(title), "YAZIT -%s",   display.c_str());
     SDL_SetWindowTitle(win, title);
 }
 
@@ -661,8 +661,9 @@ void App::OpenFile(const std::string& path) {
 
 // ─── Dosya dialogları ─────────────────────────────────────────────────────────
 void App::OpenFileWithDialog() {
-    std::string p = OpenFileDialog(hwnd);
-    if (!p.empty()) OpenFile(p);
+    auto paths = OpenFileDialog(hwnd);
+    for (auto& p : paths)
+        OpenFile(p);
 }
 
 void App::SaveActive() {

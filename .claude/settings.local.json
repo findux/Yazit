@@ -35,7 +35,9 @@
       "Bash(where makensis:*)",
       "Read(//c/Program Files \\(x86\\)/NSIS/**)",
       "Read(//c/Program Files/NSIS/**)",
-      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" installer.nsi)"
+      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" installer.nsi)",
+      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" /inputcharset UTF8 installer.nsi)",
+      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" -inputcharset UTF8 installer.nsi)"
     ]
   }
 }

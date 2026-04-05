@@ -1,19 +1,19 @@
-; =============================================================================
-;  Yazit - NSIS Installer Script
+﻿; =============================================================================
+;  YAZIT - NSIS Installer Script
 ; =============================================================================
 
 Unicode True
 
-!define APP_NAME      "Yazit"
-!define APP_EXE       "Yazit.exe"
+!define APP_NAME      "YAZIT"
+!define APP_EXE       "YAZIT.exe"
 !define APP_VERSION   "1.0.0"
-!define APP_PUBLISHER "Yazit"
+!define APP_PUBLISHER "YAZIT"
 !define INSTALL_DIR   "$PROGRAMFILES64\${APP_NAME}"
 !define REG_UNINSTALL "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 
 ; ── Genel ─────────────────────────────────────────────────────────────────────
 Name              "${APP_NAME} ${APP_VERSION}"
-OutFile           "Yazit-${APP_VERSION}-Setup.exe"
+OutFile           "YAZIT-${APP_VERSION}-Setup.exe"
 InstallDir        "${INSTALL_DIR}"
 InstallDirRegKey  HKLM "Software\${APP_NAME}" "InstallDir"
 RequestExecutionLevel admin
@@ -26,10 +26,10 @@ SetCompressor     /SOLID lzma
 !define MUI_ICON   "dist\app.ico"
 !define MUI_UNICON "dist\app.ico"
 
-!define MUI_WELCOMEPAGE_TITLE    "Yazit ${APP_VERSION} Kurulum Sihirbazı"
-!define MUI_WELCOMEPAGE_TEXT     "Bu sihirbaz Yazit uygulamasını bilgisayarınıza kuracak.$\r$\n$\r$\nDevam etmek için İleri'ye tıklayın."
+!define MUI_WELCOMEPAGE_TITLE    "YAZIT ${APP_VERSION} Kurulum Sihirbazı"
+!define MUI_WELCOMEPAGE_TEXT     "Bu sihirbaz YAZIT uygulamasını bilgisayarınıza kuracak.$\r$\n$\r$\nDevam etmek için İleri'ye tıklayın."
 !define MUI_FINISHPAGE_RUN       "$INSTDIR\${APP_EXE}"
-!define MUI_FINISHPAGE_RUN_TEXT  "Yazit'i şimdi başlat"
+!define MUI_FINISHPAGE_RUN_TEXT  "YAZIT'i şimdi başlat"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
@@ -66,12 +66,12 @@ Section "Ana Program" SecMain
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${APP_EXE}" "Path"  "$INSTDIR"
 
   ; ── Sağ tık menüsü: tüm dosyalar ──────────────────────────────────────────
-  WriteRegStr HKCR "*\shell\${APP_NAME}"         ""      "Yazit ile Aç"
+  WriteRegStr HKCR "*\shell\${APP_NAME}"         ""      "YAZIT ile Aç"
   WriteRegStr HKCR "*\shell\${APP_NAME}"         "Icon"  "$INSTDIR\app.ico"
   WriteRegStr HKCR "*\shell\${APP_NAME}\command" ""      '"$INSTDIR\${APP_EXE}" "%1"'
 
   ; ── Sağ tık menüsü: klasörler ──────────────────────────────────────────────
-  WriteRegStr HKCR "Directory\shell\${APP_NAME}"         ""      "Yazit ile Aç"
+  WriteRegStr HKCR "Directory\shell\${APP_NAME}"         ""      "YAZIT ile Aç"
   WriteRegStr HKCR "Directory\shell\${APP_NAME}"         "Icon"  "$INSTDIR\app.ico"
   WriteRegStr HKCR "Directory\shell\${APP_NAME}\command" ""      '"$INSTDIR\${APP_EXE}" "%1"'
 

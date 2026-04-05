@@ -11,18 +11,40 @@ static const char* kFilter =
     "Lua\0*.lua\0"
     "SQL\0*.sql\0";
 
-std::string OpenFileDialog(HWND owner) {
-    char buf[MAX_PATH] = {};
-    OPENFILENAMEA ofn = {};
-    ofn.lStructSize  = sizeof(ofn);
-    ofn.hwndOwner    = owner;
-    ofn.lpstrFile    = buf;
-    ofn.nMaxFile     = sizeof(buf);
-    ofn.lpstrFilter  = kFilter;
-    ofn.nFilterIndex = 1;
-    ofn.lpstrTitle   = "Dosya Ac";
-    ofn.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-    return GetOpenFileNameA(&ofn) ? buf : std::string{};
+std::vector<std::string> OpenFileDialog(HWND owner) {
+    // Çoklu seçim için geniş buffer: "klasör\0dosya1\0dosya2\0\0"
+    std::vector<char> buf(32768, '\0');
+    OPENFILENAMEA ofn  = {};
+    ofn.lStructSize    = sizeof(ofn);
+    ofn.hwndOwner      = owner;
+    ofn.lpstrFile      = buf.data();
+    ofn.nMaxFile       = (DWORD)buf.size();
+    ofn.lpstrFilter    = kFilter;
+    ofn.nFilterIndex   = 1;
+    ofn.lpstrTitle     = "Dosya Ac";
+    ofn.Flags          = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST |
+                         OFN_NOCHANGEDIR   | OFN_EXPLORER      |
+                         OFN_ALLOWMULTISELECT;
+
+    std::vector<std::string> result;
+    if (!GetOpenFileNameA(&ofn)) return result;
+
+    const char* p = buf.data();
+    std::string first = p;          // tek dosya → tam yol, çoklu → klasör
+    p += first.size() + 1;
+
+    if (*p == '\0') {
+        // Tek dosya seçildi: buf doğrudan tam yol içerir
+        result.push_back(first);
+    } else {
+        // Çoklu dosya: ilk token klasör, kalanlar dosya adları
+        while (*p) {
+            std::string fname = p;
+            result.push_back(first + "\\" + fname);
+            p += fname.size() + 1;
+        }
+    }
+    return result;
 }
 
 std::string SaveFileDialog(const std::string& current, HWND owner) {

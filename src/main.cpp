@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    SDL_Window* win = SDL_CreateWindow("Yazit",
+    SDL_Window* win = SDL_CreateWindow("YAZIT",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1400, 900,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
     {
         char appdata[MAX_PATH];
         if (GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH)) {
-            std::string dir = std::string(appdata) + "\\Yazit";
+            std::string dir = std::string(appdata) + "\\YAZIT";
             CreateDirectoryA(dir.c_str(), nullptr);   // yoksa oluştur
             iniPath = dir + "\\imgui.ini";
         }

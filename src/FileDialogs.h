@@ -3,6 +3,7 @@
 #define NOMINMAX
 #include <windows.h>
 #include <string>
+#include <vector>
 
-std::string OpenFileDialog(HWND owner = nullptr);
-std::string SaveFileDialog(const std::string& current = {}, HWND owner = nullptr);
+std::vector<std::string> OpenFileDialog(HWND owner = nullptr);
+std::string              SaveFileDialog(const std::string& current = {}, HWND owner = nullptr);
