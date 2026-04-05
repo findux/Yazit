@@ -261,6 +261,22 @@ void App::DrawMenuBar(bool& running) {
         bool ws = ActiveTab().editor.IsShowingWhitespaces();
         if (ImGui::MenuItem("Boşluk Göster", nullptr, ws))
             ActiveTab().editor.SetShowWhitespaces(!ws);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Pencere Düzenini Sıfırla")) {
+            // Boş ini yükleyerek tüm pencere konumlarını temizle, diske yaz
+            ImGui::LoadIniSettingsFromMemory("", 0);
+            const char* ini = ImGui::GetIO().IniFilename;
+            if (ini && *ini) ImGui::SaveIniSettingsToDisk(ini);
+            statusMsg = "Pencere duzeni sifirlandi.";
+        }
+        if (ImGui::MenuItem("imgui.ini Düzenle...")) {
+            const char* ini = ImGui::GetIO().IniFilename;
+            if (ini && *ini) {
+                // Güncel pencere durumunu önce diske yaz
+                ImGui::SaveIniSettingsToDisk(ini);
+                OpenFile(ini);
+            }
+        }
         ImGui::EndMenu();
     }
 
