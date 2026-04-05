@@ -375,13 +375,25 @@ void App::DrawFindWindow() {
     ImGui::Separator();
 
     const float labelW = 80.0f;
-    ImGui::Text("Bul:");     ImGui::SameLine(labelW); ImGui::SetNextItemWidth(320);
+    ImGui::Text("Bul:");     ImGui::SameLine(labelW); ImGui::SetNextItemWidth(300);
     if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
     bool enter = ImGui::InputText("##Find", findState.find, sizeof(findState.find),
                                   ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SameLine();
+    if (ImGui::SmallButton("x##cf")) {
+        memset(findState.find, 0, sizeof(findState.find));
+        memset(findState.msg,  0, sizeof(findState.msg));
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Aramayi temizle");
+
     if (findState.showReplace) {
-        ImGui::Text("Degistir:"); ImGui::SameLine(labelW); ImGui::SetNextItemWidth(320);
+        ImGui::Text("Degistir:"); ImGui::SameLine(labelW); ImGui::SetNextItemWidth(300);
         ImGui::InputText("##Repl", findState.replace, sizeof(findState.replace));
+        ImGui::SameLine();
+        if (ImGui::SmallButton("x##cr")) {
+            memset(findState.replace, 0, sizeof(findState.replace));
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Degistirmeyi temizle");
     }
 
     ImGui::Separator();
@@ -403,7 +415,7 @@ void App::DrawFindWindow() {
     if ((ImGui::Button("Bul Sonraki") || enter) && valid)
         findState.FindNext(tabs[leftActive], findState.searchDown);
     ImGui::SameLine();
-    if (ImGui::Button("Bul Onceki") && valid)
+    if (ImGui::Button("Bul Önceki") && valid)
         findState.FindNext(tabs[leftActive], !findState.searchDown);
     if (findState.showReplace) {
         ImGui::SameLine();
@@ -599,11 +611,18 @@ void App::DrawResultsPanel() {
     ImGui::TextColored(ImVec4(0.45f, 0.80f, 1.0f, 1.0f),
                        "  Arama Sonuclari  —  \"%s\"  —  %d eslesme",
                        findState.find, (int)m_searchResults.size());
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Temizle")) {
+        m_searchResults.clear();
+        memset(findState.msg, 0, sizeof(findState.msg));
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sonuclari temizle");
     ImGui::SameLine(ImGui::GetContentRegionAvail().x - 18);
     if (ImGui::SmallButton("X")) {
         m_showResults = false;
         m_searchResults.clear();
     }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Paneli kapat");
     ImGui::Separator();
 
     if (m_searchResults.empty()) {
