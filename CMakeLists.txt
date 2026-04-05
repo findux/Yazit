@@ -70,3 +70,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     # Lua
     ${LUA_LIBRARIES}
 )
+
+# ── Kurulum (dist/ klasörü) ───────────────────────────────────────────────────
+install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION .
+)
+
+# vcpkg'den gelen DLL'leri yanına kopyala
+install(DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>/"
+    DESTINATION .
+    FILES_MATCHING PATTERN "*.dll"
+)
+
+# İkon dosyasını da kopyala (NSIS kullanacak)
+install(FILES src/app.ico DESTINATION .)

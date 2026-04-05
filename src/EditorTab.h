@@ -4,7 +4,7 @@
 
 // Desteklenen diller
 static const char* kLangNames[] = {
-    "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Duz Metin"
+    "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Düz Metin"
 };
 
 static TextEditor::LanguageDefinition LangByIdx(int i) {
@@ -51,3 +51,4 @@ public:
 
     static std::string Basename(const std::string& p);
 };
+

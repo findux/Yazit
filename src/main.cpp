@@ -5,7 +5,7 @@
 #include "imgui_impl_sdl2.h"
 #include "App.h"
 
-int main(int, char**) {
+int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -58,6 +58,13 @@ int main(int, char**) {
 
     App app;
     app.Init(win);
+
+    // Sağ tık veya komut satırından gelen dosyaları aç
+    if (argc > 1) {
+        app.tabs.clear();   // Init'in açtığı varsayılan boş sekmeyi kapat
+        for (int i = 1; i < argc; i++)
+            app.OpenFile(argv[i]);
+    }
 
     bool running = true;
     while (running) {

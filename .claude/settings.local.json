@@ -25,7 +25,17 @@
       "Bash(where convert:*)",
       "Bash(where ffmpeg:*)",
       "Bash(powershell -Command \"Get-Command node\")",
-      "Bash(node D:/Uzay/make_icon.js)"
+      "Bash(node D:/Uzay/make_icon.js)",
+      "Bash(ls D:/Yazit/src/*.ico)",
+      "Bash(ls D:/Yazit/src/*.rc)",
+      "Bash(cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=\"D:/Uzay/vcpkg/scripts/buildsystems/vcpkg.cmake\" -A x64)",
+      "Bash(cmake -B D:/Yazit/build -S D:/Yazit -DCMAKE_TOOLCHAIN_FILE=\"D:/Uzay/vcpkg/scripts/buildsystems/vcpkg.cmake\" -A x64)",
+      "Bash(cmake --install build --config Release --prefix dist)",
+      "Bash(makensis installer.nsi)",
+      "Bash(where makensis:*)",
+      "Read(//c/Program Files \\(x86\\)/NSIS/**)",
+      "Read(//c/Program Files/NSIS/**)",
+      "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" installer.nsi)"
     ]
   }
 }
