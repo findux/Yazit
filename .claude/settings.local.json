@@ -38,7 +38,12 @@
       "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" installer.nsi)",
       "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" /inputcharset UTF8 installer.nsi)",
       "Bash(\"C:/Program Files \\(x86\\)/NSIS/makensis.exe\" -inputcharset UTF8 installer.nsi)",
-      "Bash(powershell -Command \"Remove-Item ''D:/Yazit/YAZIT-1.0.0-Setup.exe'' -Force -ErrorAction SilentlyContinue; & ''C:/Program Files \\(x86\\)/NSIS/makensis.exe'' ''-inputcharset'' ''UTF8'' ''D:/Yazit/installer.nsi''\")"
+      "Bash(powershell -Command \"Remove-Item ''D:/Yazit/YAZIT-1.0.0-Setup.exe'' -Force -ErrorAction SilentlyContinue; & ''C:/Program Files \\(x86\\)/NSIS/makensis.exe'' ''-inputcharset'' ''UTF8'' ''D:/Yazit/installer.nsi''\")",
+      "Bash(Remove-Item \"D:/Yazit/.git/index.lock\" -Force)",
+      "Bash(cmd /c \"del /f D:\\\\Yazit\\\\.git\\\\index.lock 2>nul & echo done\")",
+      "Bash(cmd /c \"cd /d D:\\\\Yazit && del /f .git\\\\index.lock 2>nul && timeout /t 1 /nobreak >nul && git rm --cached src/ImGuiColorTextEdit && echo SUCCESS\")",
+      "Bash(cmd /c \"cd /d D:\\\\Yazit && git status --short src\\\\ImGuiColorTextEdit\")",
+      "Bash(cmd /c \"cd /d D:\\\\Yazit && git status 2>&1\")"
     ]
   }
 }
