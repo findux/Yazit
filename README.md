@@ -61,6 +61,8 @@ cmake --build build --config Release
 
 2- Görünüm-> Dil seçnekleri kullanıcı tarafından çoğaltılması sağlanacak. Özellikle GCode görünümü eklenecek.
 
+3- Harici kaynak güncellemesi takibi.
+
 ## Lisans
 
 Bu proje **MIT Lisansı** ile lisanslanmıştır. Ayrıntılar için [`LICENSE`](LICENSE) dosyasına bakın.
