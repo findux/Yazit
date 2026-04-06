@@ -56,6 +56,9 @@ cmake --build build --config Release
 Çıktı: `build/Release/YAZIT.exe`
 
 ---
+## Yapılacaklar
+1- Kayıt edilmemiş dökümanların çıkış esnasında "Kayıt edilsin mi?" sorgusu eklenecek.
+2- Görünüm-> Dil seçnekleri kullanıcı tarafından çoğaltılması sağlanacak. Özellikle GCode görünümü eklenecek.
 
 ## Lisans
 
