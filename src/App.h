@@ -35,6 +35,7 @@ public:
     // ── Yaşam döngüsü ───────────────────────────────────────────────────────
     void Init(SDL_Window* window);
     void Draw(bool& running);
+    void RequestExit(bool& running);   // Kaydedilmemiş dosya varsa onay ister
 
     // ── Tema ────────────────────────────────────────────────────────────────
     enum class Theme { Dark, Light };
@@ -78,6 +79,11 @@ private:
     std::vector<SearchResult> m_searchResults;
     bool  m_showResults   = false;
     float m_resultsHeight = 160.0f;
+
+    // Çıkış onay diyaloğu
+    bool             m_exitConfirmOpen = false;
+    std::vector<int> m_exitTabQueue;       // modified tab indeksleri (sırayla işlenecek)
+    void  DrawExitConfirmDialog(bool& running);
 
     // Dosya işlemleri (dialog açar)
     void OpenFileWithDialog();

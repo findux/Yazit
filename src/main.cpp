@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             ImGui_ImplSDL2_ProcessEvent(&ev);
-            if (ev.type == SDL_QUIT) running = false;
+            if (ev.type == SDL_QUIT) app.RequestExit(running);
         }
 
         ImGui_ImplOpenGL3_NewFrame();
