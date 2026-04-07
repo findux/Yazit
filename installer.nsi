@@ -6,7 +6,7 @@ Unicode True
 
 !define APP_NAME      "YAZIT"
 !define APP_EXE       "YAZIT.exe"
-!define APP_VERSION   "1.0.0"
+!define APP_VERSION   "1.1.0"
 !define APP_PUBLISHER "YAZIT"
 !define INSTALL_DIR   "$PROGRAMFILES64\${APP_NAME}"
 !define REG_UNINSTALL "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
