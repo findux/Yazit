@@ -6,6 +6,7 @@
 #include "imgui_impl_sdl2.h"
 #include <cstdio>
 #include <set>
+#include <algorithm>
 
 // ─── Tema ─────────────────────────────────────────────────────────────────────
 void App::SetTheme(Theme t) {
@@ -182,20 +183,51 @@ void App::Draw(bool& running) {
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
     if (splitMode) {
-        float half = area.x * 0.5f - 1.0f;
-        DrawPanel("L", leftActive,  {half, area.y}, wantFocusL);
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
-        ImGui::BeginChild("##div", {2.0f, area.y}); ImGui::EndChild();
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        DrawPanel("R", rightActive, {half, area.y}, wantFocusR);
+        const float divW    = 5.0f;
+        const float minPane = 80.0f;
+        float totalW = area.x;
+        float leftW  = totalW * m_splitPos - divW * 0.5f;
+        float rightW = totalW - leftW - divW;
+        leftW  = std::max(leftW,  minPane);
+        rightW = std::max(rightW, minPane);
+
+        // area'nın başlangıç ekran konumunu kaydet
+        ImVec2 areaPos = ImGui::GetCursorScreenPos();
+
+        // Sol panel
+        DrawPanel("L", leftActive, {leftW, area.y}, wantFocusL);
+
+        // divW boşluk bırakarak sağ paneli çiz
+        ImGui::SameLine(0, divW);
+        DrawPanel("R", rightActive, {rightW, area.y}, wantFocusR);
+
+        // Divider'ı boşluğun üzerine yerleştir (panellerden sonra → üstte kalır)
+        ImVec2 divMin = { areaPos.x + leftW, areaPos.y };
+        ImVec2 divMax = { areaPos.x + leftW + divW, areaPos.y + area.y };
+
+        ImGui::SetCursorScreenPos(divMin);
+        ImGui::InvisibleButton("##divDrag", { divW, area.y });
+
+        bool hot = ImGui::IsItemHovered() || ImGui::IsItemActive();
+        ImGui::GetWindowDrawList()->AddRectFilled(divMin, divMax,
+            hot ? IM_COL32(120, 120, 120, 255) : IM_COL32(55, 55, 55, 255));
+
+        if (hot)
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
+            float mouseX = ImGui::GetMousePos().x - areaPos.x;
+            m_splitPos = std::clamp(mouseX / totalW,
+                                    minPane / totalW,
+                                    1.0f - (minPane + divW) / totalW);
+        }
     } else {
         DrawPanel("L", leftActive, area, wantFocusL);
     }
 
     if (m_showResults) DrawResultsPanel();
     DrawStatusBar();
+    DrawExitConfirmDialog(running);  // ##Root Begin/End içinde olmalı
 
     ImGui::PopStyleVar(); // ItemSpacing
     ImGui::End();
@@ -237,7 +269,7 @@ void App::DrawMenuBar(bool& running) {
             ImGui::EndMenu();
         }
         ImGui::Separator();
-        if (ImGui::MenuItem("Çıkış", "Alt+F4")) running = false;
+        if (ImGui::MenuItem("Çıkış", "Alt+F4")) RequestExit(running);
         ImGui::EndMenu();
     }
 
@@ -548,6 +580,107 @@ void App::HandleShortcuts(bool& running) {
             rightActive = (rightActive + 1) % (int)tabs.size();
             wantFocusR = true;
         }
+    }
+}
+
+// ─── Çıkış onayı ─────────────────────────────────────────────────────────────
+void App::RequestExit(bool& running) {
+    // Sadece modified olan sekmeleri kuyruğa al
+    m_exitTabQueue.clear();
+    for (int i = 0; i < (int)tabs.size(); i++)
+        if (tabs[i].modified)
+            m_exitTabQueue.push_back(i);
+
+    if (m_exitTabQueue.empty()) {
+        running = false;
+    } else {
+        // İlk modified sekmeye geç
+        leftActive = m_exitTabQueue.front();
+        wantFocusL = true;
+        m_exitConfirmOpen = true;
+    }
+}
+
+void App::DrawExitConfirmDialog(bool& running) {
+    if (!m_exitConfirmOpen) return;
+
+    // Kuyruktan artık modified olmayan veya silinmiş sekmeleri temizle
+    while (!m_exitTabQueue.empty()) {
+        int idx = m_exitTabQueue.front();
+        if (idx >= (int)tabs.size() || !tabs[idx].modified)
+            m_exitTabQueue.erase(m_exitTabQueue.begin());
+        else
+            break;
+    }
+
+    // Kuyruk bittiyse çık
+    if (m_exitTabQueue.empty()) {
+        running = false;
+        m_exitConfirmOpen = false;
+        return;
+    }
+
+    // Aktif sekmeyi kuyruğun başındakine getir
+    leftActive = m_exitTabQueue.front();
+    wantFocusL = true;
+
+    // Popup ##Root içinde açılır — her frame OpenPopup çağrısı gerekli
+    ImGui::OpenPopup("###ExitConfirm");
+
+    ImGui::SetNextWindowSize(ImVec2(380, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(),
+                            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+    bool popupOpen = true;  // ImGui X'e basınca bunu false yapar
+    if (ImGui::BeginPopupModal("Kaydedilmemis Degisiklik###ExitConfirm",
+        &popupOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        EditorTab& cur = tabs[m_exitTabQueue.front()];
+        ImGui::TextWrapped("\"%s\" dosyasinda kaydedilmemis degisiklikler var.",
+                           cur.name.c_str());
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        float btnW = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 3) * 0.25f;
+
+        auto advanceQueue = [&]() {
+            m_exitTabQueue.erase(m_exitTabQueue.begin());
+            if (m_exitTabQueue.empty()) {
+                running = false;
+                m_exitConfirmOpen = false;
+                ImGui::CloseCurrentPopup();
+            }
+        };
+
+        if (ImGui::Button("Kaydet", ImVec2(btnW, 0))) {
+            SaveActive();
+            if (!cur.modified) advanceQueue();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Farklı Kaydet", ImVec2(btnW*1.5, 0))) {
+            SaveActiveAs();
+            if (!cur.modified) advanceQueue();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Kaydetme", ImVec2(btnW, 0))) {
+            advanceQueue();
+        }
+        //ImGui::SameLine();
+        if (ImGui::Button("Tümünü Kaydetmeden Çık", ImVec2(btnW*2.25, 0))) {
+            running = false;
+            m_exitConfirmOpen = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    // X'e basıldıysa popupOpen=false olur, BeginPopupModal bloğuna girilmez
+    // → çıkıştan vazgeç
+    if (!popupOpen) {
+        m_exitConfirmOpen = false;
+        m_exitTabQueue.clear();
     }
 }
 
