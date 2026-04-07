@@ -3164,3 +3164,93 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Lua()
 	}
 	return langDef;
 }
+
+const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Rust()
+{
+	static bool inited = false;
+	static LanguageDefinition langDef;
+	if (!inited)
+	{
+		static const char* const keywords[] = {
+			"as", "async", "await", "break", "const", "continue", "crate", "dyn",
+			"else", "enum", "extern", "false", "fn", "for", "if", "impl", "in",
+			"let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return",
+			"self", "Self", "static", "struct", "super", "trait", "true", "type",
+			"unsafe", "use", "where", "while", "yield",
+			"abstract", "become", "box", "do", "final", "macro", "override",
+			"priv", "try", "typeof", "unsized", "virtual"
+		};
+		for (auto& k : keywords)
+			langDef.mKeywords.insert(k);
+
+		static const char* const identifiers[] = {
+			"bool", "char", "f32", "f64", "i8", "i16", "i32", "i64", "i128",
+			"isize", "u8", "u16", "u32", "u64", "u128", "usize", "str",
+			"String", "Vec", "Option", "Result", "Box", "Rc", "Arc", "Cell",
+			"RefCell", "HashMap", "HashSet", "BTreeMap", "BTreeSet",
+			"Some", "None", "Ok", "Err",
+			"Copy", "Clone", "Debug", "Default", "Display", "Drop",
+			"Eq", "PartialEq", "Ord", "PartialOrd", "Hash",
+			"Send", "Sync", "Sized", "Unpin",
+			"From", "Into", "TryFrom", "TryInto",
+			"Iterator", "IntoIterator", "ExactSizeIterator", "DoubleEndedIterator",
+			"Fn", "FnMut", "FnOnce", "Future",
+			"AsRef", "AsMut", "Borrow", "BorrowMut", "ToOwned", "ToString",
+			"Deref", "DerefMut",
+			"Read", "Write", "Seek", "BufRead",
+			"println", "print", "eprintln", "eprint", "format", "vec",
+			"panic", "assert", "assert_eq", "assert_ne",
+			"debug_assert", "debug_assert_eq", "debug_assert_ne",
+			"cfg", "derive", "test", "bench", "allow", "warn", "deny", "forbid",
+			"todo", "unimplemented", "unreachable",
+			"include", "include_str", "include_bytes",
+			"concat", "stringify", "env", "option_env",
+			"line", "column", "file", "module_path"
+		};
+		for (auto& k : identifiers)
+		{
+			Identifier id;
+			id.mDeclaration = "Built-in type / macro";
+			langDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
+		}
+
+		langDef.mTokenize = [](const char * in_begin, const char * in_end, const char *& out_begin, const char *& out_end, PaletteIndex & paletteIndex) -> bool
+		{
+			paletteIndex = PaletteIndex::Max;
+
+			while (in_begin < in_end && isascii(*in_begin) && isblank(*in_begin))
+				in_begin++;
+
+			if (in_begin == in_end)
+			{
+				out_begin = in_end;
+				out_end = in_end;
+				paletteIndex = PaletteIndex::Default;
+			}
+			else if (TokenizeCStyleString(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::String;
+			else if (TokenizeCStyleCharacterLiteral(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::CharLiteral;
+			else if (TokenizeCStyleIdentifier(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::Identifier;
+			else if (TokenizeCStyleNumber(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::Number;
+			else if (TokenizeCStylePunctuation(in_begin, in_end, out_begin, out_end))
+				paletteIndex = PaletteIndex::Punctuation;
+
+			return paletteIndex != PaletteIndex::Max;
+		};
+
+		langDef.mCommentStart = "/*";
+		langDef.mCommentEnd = "*/";
+		langDef.mSingleLineComment = "//";
+
+		langDef.mCaseSensitive = true;
+		langDef.mAutoIndentation = true;
+
+		langDef.mName = "Rust";
+
+		inited = true;
+	}
+	return langDef;
+}

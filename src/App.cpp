@@ -40,7 +40,7 @@ void App::ApplyEditorPalette(TextEditor& editor, int langIdx) {
     bool dark = (m_theme == Theme::Dark);
     auto p    = dark ? TextEditor::GetDarkPalette() : TextEditor::GetLightPalette();
 
-    if (langIdx == 6) {  // Düz Metin: tüm syntax renklerini Default'a eşitle
+    if (langIdx == 7) {  // Düz Metin: tüm syntax renklerini Default'a eşitle
         ImU32 fg = p[(size_t)TextEditor::PaletteIndex::Default];
         for (size_t i = (size_t)TextEditor::PaletteIndex::Default;
                     i <  (size_t)TextEditor::PaletteIndex::Background; ++i)
