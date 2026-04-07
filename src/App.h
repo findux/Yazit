@@ -88,6 +88,13 @@ private:
     std::vector<int> m_exitTabQueue;       // modified tab indeksleri (sırayla işlenecek)
     void  DrawExitConfirmDialog(bool& running);
 
+    // Dış kaynak değişiklik tespiti
+    ULONGLONG        m_lastFileCheckTick = 0;
+    std::vector<int> m_reloadQueue;        // değişmiş tab indeksleri (sırayla sorulur)
+    bool             m_reloadPromptOpen   = false;
+    void  CheckExternalChanges();
+    void  DrawReloadDialog();
+
     // Dosya işlemleri (dialog açar)
     void OpenFileWithDialog();
     void SaveActive();

@@ -228,9 +228,12 @@ void App::Draw(bool& running) {
     if (m_showResults) DrawResultsPanel();
     DrawStatusBar();
     DrawExitConfirmDialog(running);  // ##Root Begin/End içinde olmalı
+    DrawReloadDialog();              // ##Root Begin/End içinde olmalı
 
     ImGui::PopStyleVar(); // ItemSpacing
     ImGui::End();
+
+    CheckExternalChanges();          // her ~2 sn'de disk zamanlarını kontrol et
 
     DrawFindWindow();
     DrawLuaWindow();
@@ -610,6 +613,83 @@ void App::RequestExit(bool& running) {
     }
 }
 
+// ─── Dış kaynak değişiklik kontrolü ──────────────────────────────────────────
+void App::CheckExternalChanges() {
+    // Zaten bir diyalog açıksa bekleme
+    if (m_reloadPromptOpen) return;
+    // 2 saniyede bir kontrol et
+    ULONGLONG now = GetTickCount64();
+    if (now - m_lastFileCheckTick < 2000) return;
+    m_lastFileCheckTick = now;
+
+    for (int i = 0; i < (int)tabs.size(); i++) {
+        if (tabs[i].path.empty()) continue;
+        FILETIME cur = EditorTab::ReadFileMTime(tabs[i].path);
+        ULARGE_INTEGER a, b;
+        a.LowPart  = cur.dwLowDateTime;              a.HighPart = cur.dwHighDateTime;
+        b.LowPart  = tabs[i].diskModTime.dwLowDateTime; b.HighPart = tabs[i].diskModTime.dwHighDateTime;
+        // Dosya varsa (a != 0) ve zaman değişmişse kuyruğa ekle
+        if (a.QuadPart != 0 && a.QuadPart != b.QuadPart) {
+            bool already = false;
+            for (int q : m_reloadQueue) if (q == i) { already = true; break; }
+            if (!already) m_reloadQueue.push_back(i);
+        }
+    }
+    if (!m_reloadQueue.empty())
+        m_reloadPromptOpen = true;
+}
+
+// ─── Yeniden yükle diyaloğu ───────────────────────────────────────────────────
+void App::DrawReloadDialog() {
+    if (!m_reloadPromptOpen) return;
+
+    // Geçersiz indeksleri temizle
+    m_reloadQueue.erase(std::remove_if(m_reloadQueue.begin(), m_reloadQueue.end(),
+        [this](int i) {
+            return i < 0 || i >= (int)tabs.size() || tabs[i].path.empty();
+        }), m_reloadQueue.end());
+
+    if (m_reloadQueue.empty()) { m_reloadPromptOpen = false; return; }
+
+    ImGui::OpenPopup("###ReloadConfirm");
+    bool popupOpen = true;
+    if (ImGui::BeginPopupModal("Dosya Degisti###ReloadConfirm", &popupOpen,
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+    {
+        int idx = m_reloadQueue.front();
+        ImGui::TextUnformatted(tabs[idx].name.c_str());
+        ImGui::SameLine(); ImGui::TextDisabled("baska bir uygulama tarafindan degistirildi.");
+        ImGui::Spacing();
+        ImGui::TextUnformatted("Yeniden yuklensin mi?");
+        ImGui::Spacing();
+
+        if (ImGui::Button("Yeniden Yukle", {150, 0})) {
+            std::string p = tabs[idx].path;
+            tabs[idx].Load(p);
+            m_reloadQueue.erase(m_reloadQueue.begin());
+            if (m_reloadQueue.empty()) { m_reloadPromptOpen = false; ImGui::CloseCurrentPopup(); }
+        }
+        ImGui::SameLine(0, 8);
+        if (ImGui::Button("Yukleme", {100, 0})) {
+            // "Hayır" seçildi — diskModTime'ı mevcut değerle güncelle, bir daha sorma
+            tabs[idx].diskModTime = EditorTab::ReadFileMTime(tabs[idx].path);
+            m_reloadQueue.erase(m_reloadQueue.begin());
+            if (m_reloadQueue.empty()) { m_reloadPromptOpen = false; ImGui::CloseCurrentPopup(); }
+        }
+
+        ImGui::EndPopup();
+    }
+    // Çarpıya basıldı → tüm kuyruktaki dosyaları "reddet" olarak işle
+    if (!popupOpen) {
+        for (int i : m_reloadQueue)
+            if (i >= 0 && i < (int)tabs.size())
+                tabs[i].diskModTime = EditorTab::ReadFileMTime(tabs[i].path);
+        m_reloadQueue.clear();
+        m_reloadPromptOpen = false;
+    }
+}
+
+// ─── Çıkış onayı ─────────────────────────────────────────────────────────────
 void App::DrawExitConfirmDialog(bool& running) {
     if (!m_exitConfirmOpen) return;
 

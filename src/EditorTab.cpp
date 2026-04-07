@@ -73,6 +73,15 @@ std::string EditorTab::Utf8ToAnsi(const std::string& utf8, bool* lossyOut) {
     return ansi;
 }
 
+// ─── Disk değişiklik zamanı ───────────────────────────────────────────────────
+FILETIME EditorTab::ReadFileMTime(const std::string& utf8path) {
+    FILETIME ft = {};
+    WIN32_FILE_ATTRIBUTE_DATA fa;
+    if (GetFileAttributesExW(PathToWide(utf8path).c_str(), GetFileExInfoStandard, &fa))
+        ft = fa.ftLastWriteTime;
+    return ft;
+}
+
 // ─── Yapıcı ──────────────────────────────────────────────────────────────────
 EditorTab::EditorTab() : id(s_NextId++) {
     editor.SetLanguageDefinition(TextEditor::LanguageDefinition::CPlusPlus());
@@ -105,9 +114,10 @@ void EditorTab::Load(const std::string& filePath) {
         editor.SetText(raw);
     }
 
-    langIdx = LangIdxFromPath(filePath);
+    langIdx     = LangIdxFromPath(filePath);
     editor.SetLanguageDefinition(LangByIdx(langIdx));
-    modified = false;
+    modified    = false;
+    diskModTime = ReadFileMTime(filePath);   // dış değişiklik tespiti için referans
 }
 
 // ─── Kaydetme ────────────────────────────────────────────────────────────────
@@ -151,7 +161,8 @@ bool EditorTab::Save(std::string* outError) {
         return false;
     }
 
-    modified = false;
+    modified    = false;
+    diskModTime = ReadFileMTime(path);   // başarılı kayıt sonrası referansı güncelle
     return true;
 }
 

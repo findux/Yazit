@@ -51,6 +51,7 @@ public:
     bool        modified = false;
     int         langIdx  = 0;
     Encoding    encoding = Encoding::UTF8;
+    FILETIME    diskModTime = {};   // disk'teki son bilinen değişiklik zamanı
 
     EditorTab();
     void Load(const std::string& filePath);
@@ -58,6 +59,9 @@ public:
     void SetEncoding(Encoding newEnc);  // dönüştür + işaretle
 
     const char* EncodingName() const;
+
+    // Disk üzerindeki dosyanın son yazma zamanını döndürür (UTF-8 yol)
+    static FILETIME     ReadFileMTime(const std::string& utf8path);
 
     static std::string Basename(const std::string& p);
 
