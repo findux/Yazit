@@ -564,6 +564,15 @@ void App::HandleShortcuts(bool& running) {
 
     if (!io.KeyCtrl) return;
 
+    // Geri Al / Yinele — editör odakta değilken (menü, panel vb.) da çalışsın.
+    // Editör odaktayken io.WantTextInput=true olduğundan çift işlem olmaz.
+    if (!io.WantTextInput && !io.KeyShift && !io.KeyAlt) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Z) && ActiveTab().editor.CanUndo())
+            ActiveTab().editor.Undo();
+        if (ImGui::IsKeyPressed(ImGuiKey_Y) && ActiveTab().editor.CanRedo())
+            ActiveTab().editor.Redo();
+    }
+
     if (ImGui::IsKeyPressed(ImGuiKey_N))           NewTab();
     if (ImGui::IsKeyPressed(ImGuiKey_O))           OpenFileWithDialog();
     if (ImGui::IsKeyPressed(ImGuiKey_S)) {
