@@ -2,6 +2,15 @@
 #include <fstream>
 #include <iterator>
 
+// UTF-8 patikayı std::ifstream/ofstream için geniş karaktere çevirir (MSVC gereksinimi)
+static std::wstring PathToWide(const std::string& utf8) {
+    if (utf8.empty()) return {};
+    int n = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+    std::wstring w(n - 1, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &w[0], n);
+    return w;
+}
+
 int EditorTab::s_NextId = 0;
 
 // ─── Yardımcı: ANSI mi? ───────────────────────────────────────────────────────
@@ -75,7 +84,7 @@ void EditorTab::Load(const std::string& filePath) {
     path = filePath;
     name = Basename(filePath);
 
-    std::ifstream f(filePath, std::ios::binary);
+    std::ifstream f(PathToWide(filePath), std::ios::binary);
     if (f) {
         std::string raw(std::istreambuf_iterator<char>(f), {});
 
@@ -114,7 +123,7 @@ bool EditorTab::Save(std::string* outError) {
     if (!text.empty() && text.back() == '\n')
         text.pop_back();
 
-    std::ofstream f(path, std::ios::binary);
+    std::ofstream f(PathToWide(path), std::ios::binary);
     if (!f.is_open()) {
         if (outError) *outError = "Dosya acilamadi: " + path;
         return false;

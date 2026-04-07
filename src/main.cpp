@@ -4,6 +4,21 @@
 #include <imgui_impl_opengl3.h>
 #include "imgui_impl_sdl2.h"
 #include "App.h"
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <shellapi.h>
+#include <string>
+
+// Windows'ta argv[] ANSI kodlamasıyla gelir; Türkçe karakterli
+// patikalar için GetCommandLineW + CommandLineToArgvW kullanılmalı.
+static std::string WideToUtf8(const wchar_t* w) {
+    if (!w || !w[0]) return {};
+    int n = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
+    std::string s(n - 1, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, w, -1, &s[0], n, nullptr, nullptr);
+    return s;
+}
 
 int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -72,11 +87,16 @@ int main(int argc, char** argv) {
     App app;
     app.Init(win);
 
-    // Sağ tık veya komut satırından gelen dosyaları aç
-    if (argc > 1) {
-        app.tabs.clear();   // Init'in açtığı varsayılan boş sekmeyi kapat
-        for (int i = 1; i < argc; i++)
-            app.OpenFile(argv[i]);
+    // Sağ tık veya komut satırından gelen dosyaları aç (UTF-16 ile al)
+    {
+        int wargc = 0;
+        wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+        if (wargv && wargc > 1) {
+            app.tabs.clear();   // Init'in açtığı varsayılan boş sekmeyi kapat
+            for (int i = 1; i < wargc; i++)
+                app.OpenFile(WideToUtf8(wargv[i]));
+        }
+        if (wargv) LocalFree(wargv);
     }
 
     bool running = true;
