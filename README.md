@@ -57,11 +57,13 @@ cmake --build build --config Release
 
 ---
 ## Yapılacaklar
-1-  (Yapıldı) Kayıt edilmemiş dökümanların çıkış esnasında "Kayıt edilsin mi?" sorgusu eklenecek.
+1-  (Yapıldı v1.1.0) Kayıt edilmemiş dökümanların çıkış esnasında "Kayıt edilsin mi?" sorgusu eklenecek.
 
 2- Görünüm-> Dil seçnekleri kullanıcı tarafından çoğaltılması sağlanacak. Özellikle GCode görünümü eklenecek.
 
-3- Harici kaynak güncellemesi takibi.
+3- (Yapıldı v1.1.0) Harici kaynak güncellemesi takibi.
+
+4- (Yapıldı v1.1.0) Undo redu 
 
 ## Lisans
 
