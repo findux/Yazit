@@ -54,7 +54,13 @@
       "Bash(ls D:/Yazit/src/ImGuiColorTextEdit/*.md)",
       "Bash(cmd /c \"taskkill /f /im YAZIT.exe 2>nul & timeout /t 2 /nobreak >nul\")",
       "Bash(cmd /c \"taskkill /f /im YAZIT.exe\")",
-      "Bash(cmd /c \"taskkill /f /im YAZIT.exe 2>nul\")"
+      "Bash(cmd /c \"taskkill /f /im YAZIT.exe 2>nul\")",
+      "Bash(cmake --build \"D:/Yazit/build\" --config Release)",
+      "Bash(copy \"D:\\\\Yazit\\\\build\\\\Release\\\\YAZIT.exe\" \"D:\\\\Yazit\\\\dist\\\\YAZIT.exe\" /Y)",
+      "Bash(ls \"/c/Program Files \\(x86\\)/NSIS/\")",
+      "Bash(\"/c/Program Files/NSIS/makensis.exe\" \"D:/Yazit/installer.nsi\")",
+      "Bash(cmd.exe /c \"cd /d D:\\\\Yazit && \"\"C:\\\\Program Files\\\\NSIS\\\\makensis.exe\"\" installer.nsi\")",
+      "Bash(powershell.exe -Command \"Start-Process -FilePath ''C:\\\\Program Files \\(x86\\)\\\\NSIS\\\\makensis.exe'' -ArgumentList ''D:\\\\Yazit\\\\installer.nsi'' -Wait -NoNewWindow -PassThru | Select-Object ExitCode\")"
     ]
   }
 }
