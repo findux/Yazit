@@ -6,6 +6,7 @@
 #include "imgui_impl_sdl2.h"
 #include <cstdio>
 #include <set>
+#include <algorithm>
 
 // ─── Tema ─────────────────────────────────────────────────────────────────────
 void App::SetTheme(Theme t) {
@@ -182,14 +183,44 @@ void App::Draw(bool& running) {
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
     if (splitMode) {
-        float half = area.x * 0.5f - 1.0f;
-        DrawPanel("L", leftActive,  {half, area.y}, wantFocusL);
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
-        ImGui::BeginChild("##div", {2.0f, area.y}); ImGui::EndChild();
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        DrawPanel("R", rightActive, {half, area.y}, wantFocusR);
+        const float divW    = 5.0f;
+        const float minPane = 80.0f;
+        float totalW = area.x;
+        float leftW  = totalW * m_splitPos - divW * 0.5f;
+        float rightW = totalW - leftW - divW;
+        leftW  = std::max(leftW,  minPane);
+        rightW = std::max(rightW, minPane);
+
+        // area'nın başlangıç ekran konumunu kaydet
+        ImVec2 areaPos = ImGui::GetCursorScreenPos();
+
+        // Sol panel
+        DrawPanel("L", leftActive, {leftW, area.y}, wantFocusL);
+
+        // divW boşluk bırakarak sağ paneli çiz
+        ImGui::SameLine(0, divW);
+        DrawPanel("R", rightActive, {rightW, area.y}, wantFocusR);
+
+        // Divider'ı boşluğun üzerine yerleştir (panellerden sonra → üstte kalır)
+        ImVec2 divMin = { areaPos.x + leftW, areaPos.y };
+        ImVec2 divMax = { areaPos.x + leftW + divW, areaPos.y + area.y };
+
+        ImGui::SetCursorScreenPos(divMin);
+        ImGui::InvisibleButton("##divDrag", { divW, area.y });
+
+        bool hot = ImGui::IsItemHovered() || ImGui::IsItemActive();
+        ImGui::GetWindowDrawList()->AddRectFilled(divMin, divMax,
+            hot ? IM_COL32(120, 120, 120, 255) : IM_COL32(55, 55, 55, 255));
+
+        if (hot)
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
+            float mouseX = ImGui::GetMousePos().x - areaPos.x;
+            m_splitPos = std::clamp(mouseX / totalW,
+                                    minPane / totalW,
+                                    1.0f - (minPane + divW) / totalW);
+        }
     } else {
         DrawPanel("L", leftActive, area, wantFocusL);
     }

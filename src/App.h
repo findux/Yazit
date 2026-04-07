@@ -66,6 +66,9 @@ private:
     Theme       m_theme     = Theme::Dark;
     SDL_Window* m_sdlWindow = nullptr;
 
+    // Yan yana bölme oranı (0.0–1.0, varsayılan ortada)
+    float       m_splitPos  = 0.5f;
+
     // Çizim yardımcıları
     void DrawMenuBar(bool& running);
     void DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus);
