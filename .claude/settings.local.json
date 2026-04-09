@@ -60,7 +60,8 @@
       "Bash(ls \"/c/Program Files \\(x86\\)/NSIS/\")",
       "Bash(\"/c/Program Files/NSIS/makensis.exe\" \"D:/Yazit/installer.nsi\")",
       "Bash(cmd.exe /c \"cd /d D:\\\\Yazit && \"\"C:\\\\Program Files\\\\NSIS\\\\makensis.exe\"\" installer.nsi\")",
-      "Bash(powershell.exe -Command \"Start-Process -FilePath ''C:\\\\Program Files \\(x86\\)\\\\NSIS\\\\makensis.exe'' -ArgumentList ''D:\\\\Yazit\\\\installer.nsi'' -Wait -NoNewWindow -PassThru | Select-Object ExitCode\")"
+      "Bash(powershell.exe -Command \"Start-Process -FilePath ''C:\\\\Program Files \\(x86\\)\\\\NSIS\\\\makensis.exe'' -ArgumentList ''D:\\\\Yazit\\\\installer.nsi'' -Wait -NoNewWindow -PassThru | Select-Object ExitCode\")",
+      "Bash(powershell.exe -Command \"Start-Process -FilePath 'C:\\\\Program Files \\(x86\\)\\\\NSIS\\\\makensis.exe' -ArgumentList 'D:\\\\Yazit\\\\installer.nsi' -Wait -NoNewWindow -PassThru | Select-Object ExitCode\")"
     ]
   }
 }
