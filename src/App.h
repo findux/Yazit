@@ -41,7 +41,7 @@ public:
     enum class Theme { Dark, Light };
     void SetTheme(Theme t);
 
-    // ── Editör paleti (langIdx == 6 → düz metin, tüm renkler Default'a eşit) ─
+    // ── Editör paleti (langIdx == 7 → düz metin, tüm renkler Default'a eşit) ─
     void ApplyEditorPalette(TextEditor& editor, int langIdx);
 
     // ── Dosyalarda arama ────────────────────────────────────────────────────

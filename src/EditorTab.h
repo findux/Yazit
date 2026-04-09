@@ -10,7 +10,7 @@ enum class Encoding { ANSI, UTF8, UTF8_BOM };
 
 // Desteklenen diller
 static const char* kLangNames[] = {
-    "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Düz Metin"
+    "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Rust", "Düz Metin"
 };
 
 static TextEditor::LanguageDefinition LangByIdx(int i) {
@@ -21,6 +21,7 @@ static TextEditor::LanguageDefinition LangByIdx(int i) {
         case 3: return TextEditor::LanguageDefinition::Lua();
         case 4: return TextEditor::LanguageDefinition::SQL();
         case 5: return TextEditor::LanguageDefinition::AngelScript();
+        case 6: return TextEditor::LanguageDefinition::Rust();
         default: return {};
     }
 }
@@ -28,7 +29,7 @@ static TextEditor::LanguageDefinition LangByIdx(int i) {
 // Uzantıdan dil indeksini tahmin et
 static int LangIdxFromPath(const std::string& path) {
     auto dot = path.rfind('.');
-    if (dot == std::string::npos) return 6;
+    if (dot == std::string::npos) return 7;
     std::string ext = path.substr(dot + 1);
     for (auto& c : ext) c = (char)tolower((unsigned char)c);
     if (ext == "cpp" || ext == "cc" || ext == "cxx" || ext == "hpp" || ext == "hxx") return 0;
@@ -37,7 +38,8 @@ static int LangIdxFromPath(const std::string& path) {
     if (ext == "lua") return 3;
     if (ext == "sql") return 4;
     if (ext == "as")  return 5;
-    return 6;
+    if (ext == "rs")  return 6;
+    return 7;
 }
 
 class EditorTab {
