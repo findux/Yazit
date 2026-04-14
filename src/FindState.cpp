@@ -5,17 +5,26 @@
 #include <cctype>
 #include <cstdio>
 
-TextEditor::Coordinates IdxToCoord(const std::string& t, size_t idx) {
+// TextEditor ile aynı tab-stop mantığı: (col/tabSize)*tabSize + tabSize
+static int advanceCol(int col, char ch, int tabSize) {
+    if (ch == '\t') return (col / tabSize) * tabSize + tabSize;
+    return col + 1;
+}
+
+TextEditor::Coordinates IdxToCoord(const std::string& t, size_t idx, int tabSize) {
     int ln = 0, col = 0;
-    for (size_t i = 0; i < idx && i < t.size(); i++)
-        if (t[i] == '\n') { ln++; col = 0; } else col++;
+    for (size_t i = 0; i < idx && i < t.size(); i++) {
+        if (t[i] == '\n') { ln++; col = 0; }
+        else               col = advanceCol(col, t[i], tabSize);
+    }
     return {ln, col};
 }
 
-size_t CoordToIdx(const std::string& t, TextEditor::Coordinates c) {
+size_t CoordToIdx(const std::string& t, TextEditor::Coordinates c, int tabSize) {
     size_t i = 0; int ln = 0, col = 0;
     while (i < t.size() && !(ln == c.mLine && col == c.mColumn)) {
-        if (t[i] == '\n') { ln++; col = 0; } else col++;
+        if (t[i] == '\n') { ln++; col = 0; }
+        else               col = advanceCol(col, t[i], tabSize);
         i++;
     }
     return i;
@@ -55,8 +64,9 @@ std::vector<Match> FindState::FindAll(const std::string& text) const {
 }
 
 static bool SelectMatch(EditorTab& tab, const Match& m, const std::string& txt) {
-    auto s = IdxToCoord(txt, m.start);
-    auto e = IdxToCoord(txt, m.start + m.len);
+    int ts = tab.editor.GetTabSize();
+    auto s = IdxToCoord(txt, m.start,         ts);
+    auto e = IdxToCoord(txt, m.start + m.len, ts);
     tab.editor.SetSelection(s, e);
     tab.editor.SetCursorPosition(s);
     return true;
@@ -67,7 +77,8 @@ bool FindState::FindNext(EditorTab& tab, bool fwd) {
     auto all = FindAll(txt);
     if (all.empty()) { snprintf(msg, sizeof(msg), "Bulunamadi."); return false; }
 
-    size_t cur = CoordToIdx(txt, tab.editor.GetCursorPosition());
+    int    ts  = tab.editor.GetTabSize();
+    size_t cur = CoordToIdx(txt, tab.editor.GetCursorPosition(), ts);
     size_t end = cur + tab.editor.GetSelectedText().size();
 
     if (fwd) {

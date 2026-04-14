@@ -6,8 +6,9 @@
 struct Match { size_t start, len; };
 
 // Koordinat <-> string indeks dönüşümleri
-TextEditor::Coordinates IdxToCoord(const std::string& text, size_t idx);
-size_t                  CoordToIdx(const std::string& text, TextEditor::Coordinates c);
+// tabSize: TextEditor'ın GetTabSize() değeriyle eşleşmeli (varsayılan 4)
+TextEditor::Coordinates IdxToCoord(const std::string& text, size_t idx, int tabSize = 4);
+size_t                  CoordToIdx(const std::string& text, TextEditor::Coordinates c, int tabSize = 4);
 
 class EditorTab; // ileri bildirim
 
