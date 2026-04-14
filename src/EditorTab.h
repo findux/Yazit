@@ -10,8 +10,35 @@ enum class Encoding { ANSI, UTF8, UTF8_BOM };
 
 // Desteklenen diller
 static const char* kLangNames[] = {
-    "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Rust", "Düz Metin"
+    "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Rust", "JSON", "Düz Metin"
 };
+
+// JSON için özel dil tanımı (TextEditor sözdizim vurgulama)
+static TextEditor::LanguageDefinition JsonLangDef() {
+    static bool inited = false;
+    static TextEditor::LanguageDefinition def;
+    if (!inited) {
+        // Anahtar kelimeler
+        for (auto& kw : { "true", "false", "null" })
+            def.mKeywords.insert(kw);
+
+        using PI = TextEditor::PaletteIndex;
+        // String:  "..." (kaçış sekansları dahil)
+        def.mTokenRegexStrings.push_back({ "\\\"(\\\\.|[^\\\"])*\\\"", PI::String });
+        // Sayı:    tam sayı ve ondalıklı
+        def.mTokenRegexStrings.push_back({ "-?[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?", PI::Number });
+        // Noktalama
+        def.mTokenRegexStrings.push_back({ "[\\{\\}\\[\\]:,]", PI::Punctuation });
+        // Tanımlayıcı (true/false/null anahtar kelime olarak renklendirilir)
+        def.mTokenRegexStrings.push_back({ "[a-zA-Z_][a-zA-Z0-9_]*", PI::Identifier });
+
+        def.mName             = "JSON";
+        def.mCaseSensitive    = true;
+        def.mAutoIndentation  = true;
+        inited = true;
+    }
+    return def;
+}
 
 static TextEditor::LanguageDefinition LangByIdx(int i) {
     switch (i) {
@@ -22,6 +49,7 @@ static TextEditor::LanguageDefinition LangByIdx(int i) {
         case 4: return TextEditor::LanguageDefinition::SQL();
         case 5: return TextEditor::LanguageDefinition::AngelScript();
         case 6: return TextEditor::LanguageDefinition::Rust();
+        case 7: return JsonLangDef();
         default: return {};
     }
 }
@@ -29,7 +57,7 @@ static TextEditor::LanguageDefinition LangByIdx(int i) {
 // Uzantıdan dil indeksini tahmin et
 static int LangIdxFromPath(const std::string& path) {
     auto dot = path.rfind('.');
-    if (dot == std::string::npos) return 7;
+    if (dot == std::string::npos) return 8;
     std::string ext = path.substr(dot + 1);
     for (auto& c : ext) c = (char)tolower((unsigned char)c);
     if (ext == "cpp" || ext == "cc" || ext == "cxx" || ext == "hpp" || ext == "hxx") return 0;
@@ -39,7 +67,8 @@ static int LangIdxFromPath(const std::string& path) {
     if (ext == "sql") return 4;
     if (ext == "as")  return 5;
     if (ext == "rs")  return 6;
-    return 7;
+    if (ext == "json") return 7;
+    return 8;
 }
 
 class EditorTab {

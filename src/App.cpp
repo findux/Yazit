@@ -40,17 +40,108 @@ void App::ApplyEditorPalette(TextEditor& editor, int langIdx) {
     bool dark = (m_theme == Theme::Dark);
     auto p    = dark ? TextEditor::GetDarkPalette() : TextEditor::GetLightPalette();
 
-    if (langIdx == 7) {  // Düz Metin: tüm syntax renklerini Default'a eşitle
-        ImU32 fg = p[(size_t)TextEditor::PaletteIndex::Default];
-        for (size_t i = (size_t)TextEditor::PaletteIndex::Default;
-                    i <  (size_t)TextEditor::PaletteIndex::Background; ++i)
+    using PI = TextEditor::PaletteIndex;
+
+    if (langIdx == 8) {  // Düz Metin: tüm syntax renklerini Default'a eşitle
+        ImU32 fg = p[(size_t)PI::Default];
+        for (size_t i = (size_t)PI::Default; i < (size_t)PI::Background; ++i)
             p[i] = fg;
+    }
+    else if (langIdx == 7) {  // JSON: temaya özgü renkler
+        if (dark) {
+            // Koyu tema — VSCode Dark+ esinli
+            p[(size_t)PI::String]      = IM_COL32(206, 145, 120, 255); // salmon  → string değerleri
+            p[(size_t)PI::Number]      = IM_COL32(181, 206, 168, 255); // açık yeşil → sayılar
+            p[(size_t)PI::Keyword]     = IM_COL32( 86, 156, 214, 255); // mavi   → true/false/null
+            p[(size_t)PI::Punctuation] = IM_COL32(150, 150, 150, 255); // gri    → {}[],:
+            p[(size_t)PI::Identifier]  = IM_COL32(156, 220, 254, 255); // açık mavi → anahtarlar
+            p[(size_t)PI::Default]     = IM_COL32(212, 212, 212, 255); // açık gri
+        } else {
+            // Açık tema — VSCode Light+ esinli
+            p[(size_t)PI::String]      = IM_COL32(163,  21,  21, 255); // koyu kırmızı → string değerleri
+            p[(size_t)PI::Number]      = IM_COL32(  9, 134,  88, 255); // orman yeşili  → sayılar
+            p[(size_t)PI::Keyword]     = IM_COL32(  0,   0, 205, 255); // mavi          → true/false/null
+            p[(size_t)PI::Punctuation] = IM_COL32( 80,  80,  80, 255); // koyu gri      → {}[],:
+            p[(size_t)PI::Identifier]  = IM_COL32(  0,  16, 128, 255); // lacivert      → anahtarlar
+            p[(size_t)PI::Default]     = IM_COL32( 30,  30,  30, 255); // neredeyse siyah
+        }
     }
 
     editor.SetPalette(p);
 }
 
 // ─── Başlık güncelleme ────────────────────────────────────────────────────────
+// ─── JSON formatlayıcı ───────────────────────────────────────────────────────
+// src içindeki string literalleri dışında kalan boşlukları kaldırır (minify)
+static std::string FlatJson(const std::string& src) {
+    std::string out;
+    out.reserve(src.size());
+    bool inStr = false, esc = false;
+    for (char c : src) {
+        if (esc)                          { out += c; esc = false; continue; }
+        if (inStr && c == '\\')           { out += c; esc = true;  continue; }
+        if (c == '"')                     { inStr = !inStr; out += c; continue; }
+        if (inStr)                        { out += c; continue; }
+        if (c != ' ' && c != '\t' && c != '\n' && c != '\r') out += c;
+    }
+    return out;
+}
+
+// Girintili (güzel) JSON üretir; boş nesne/dizi {} [] tek satırda kalır
+static std::string PrettyJson(const std::string& src) {
+    const int IND = 4;
+    std::string out;
+    out.reserve(src.size() * 2);
+    int indent = 0;
+    bool inStr = false, esc = false;
+
+    auto nl = [&]() {
+        out += '\n';
+        for (int k = 0; k < indent * IND; k++) out += ' ';
+    };
+    // Son yazılan gerçek karakter (boşluk/newline sayılmaz)
+    auto lastReal = [&]() -> char {
+        for (int k = (int)out.size() - 1; k >= 0; k--)
+            if (out[k] != ' ' && out[k] != '\t' && out[k] != '\n' && out[k] != '\r')
+                return out[k];
+        return '\0';
+    };
+
+    for (size_t i = 0; i < src.size(); i++) {
+        char c = src[i];
+        if (esc)         { out += c; esc = false; continue; }
+        if (inStr) {
+            out += c;
+            if (c == '\\') esc = true;
+            else if (c == '"') inStr = false;
+            continue;
+        }
+        switch (c) {
+        case '"': inStr = true; out += c; break;
+        case '{': case '[': {
+            out += c;
+            // Boşlukları atla, sonraki gerçek karaktere bak
+            size_t j = i + 1;
+            while (j < src.size() && (src[j]==' '||src[j]=='\t'||src[j]=='\n'||src[j]=='\r')) j++;
+            bool empty = (j < src.size() && (src[j] == '}' || src[j] == ']'));
+            if (!empty) { indent++; nl(); }
+            break;
+        }
+        case '}': case ']': {
+            bool empty = (lastReal() == '{' || lastReal() == '[');
+            if (!empty) { if (indent > 0) indent--; nl(); }
+            out += c;
+            break;
+        }
+        case ',': out += c; nl(); break;
+        case ':': out += ": "; break;
+        case ' ': case '\t': case '\n': case '\r': break; // dış boşlukları atla
+        default:  out += c;
+        }
+    }
+    return out;
+}
+
 static void UpdateWindowTitle(SDL_Window* win, const EditorTab& tab) {
     char title[512];
     const std::string& display = tab.path.empty() ? tab.name : tab.path;
@@ -475,15 +566,50 @@ void App::DrawFindWindow() {
 void App::DrawStatusBar() {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.14f, 0.14f, 0.20f, 1.0f));
     ImGui::BeginChild("##status", {0, 22.0f}, false, ImGuiWindowFlags_NoScrollbar);
+
+    EditorTab& tab = ActiveTab();
+    bool isJson = (tab.langIdx == 7);
+
+    // JSON ise sağ tarafa buton (genişliği ayır, sonra sola kalan alana metin yaz)
+    const float btnW   = isJson ? 110.0f : 0.0f;
+    const float padR   = isJson ?   6.0f : 0.0f;
+    const float textW  = ImGui::GetContentRegionAvail().x - btnW - padR;
+
     ImGui::SetCursorPosY(3);
-    auto cp = ActiveTab().editor.GetCursorPosition();
+    auto cp = tab.editor.GetCursorPosition();
     ImGui::Text("  Satir: %d  Sutun: %d  |  %s  |  %s  |  %s  |  %s  |  %s",
         cp.mLine + 1, cp.mColumn + 1,
-        ActiveTab().editor.IsOverwrite() ? "OVR" : "INS",
-        kLangNames[ActiveTab().langIdx],
-        ActiveTab().EncodingName(),
-        ActiveTab().modified ? "*Degistirildi" : "Kaydedildi",
+        tab.editor.IsOverwrite() ? "OVR" : "INS",
+        kLangNames[tab.langIdx],
+        tab.EncodingName(),
+        tab.modified ? "*Degistirildi" : "Kaydedildi",
         statusMsg.c_str());
+
+    if (isJson) {
+        // Buton sağa hizalanmış; mevcut JSON güzel mi düz mü tespit et
+        bool isPretty = (tab.editor.GetTotalLines() > 1);
+        const char* label = isPretty ? "{ } Duzlestir" : "{ } Guzelleştir";
+
+        ImGui::SameLine(textW + padR);
+        ImGui::SetCursorPosY(2);
+        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.20f, 0.35f, 0.55f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.46f, 0.70f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.15f, 0.28f, 0.45f, 1.0f));
+        if (ImGui::Button(label, {btnW, 18.0f})) {
+            std::string text = tab.editor.GetText();
+            // TextEditor sona \n ekler, kırp
+            if (!text.empty() && text.back() == '\n') text.pop_back();
+            std::string result = isPretty ? FlatJson(text) : PrettyJson(text);
+            if (!result.empty()) {
+                tab.editor.SetText(result);
+                tab.modified = true;
+            }
+        }
+        ImGui::PopStyleColor(3);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(isPretty ? "JSON'u tek satira indir" : "JSON'u girintili goster");
+    }
+
     ImGui::EndChild();
     ImGui::PopStyleColor();
 }
