@@ -440,11 +440,12 @@ void App::DrawMenuBar(bool& running) {
         if (tab.langIdx == 7) { // JSON
             bool isPretty = (tab.editor.GetTotalLines() > 1);
             const char* label = isPretty ? "{ } Düzleştir" : "{ } Güzelleştir";
-            ImGuiStyle& st = ImGui::GetStyle();
-            const float btnW = 140.0f; // ayarlanabilir genişlik
-            // Sağ kenara hizala
-            ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - btnW - st.FramePadding.x);
-            if (ImGui::Button(label, ImVec2(btnW, 0))) {
+            // Put the button directly after the menus: same line with small spacing
+            ImGui::SameLine(0, 8.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.35f, 0.55f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.46f, 0.70f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.28f, 0.45f, 1.0f));
+            if (ImGui::Button(label, ImVec2(0, 0))) {
                 std::string text = tab.editor.GetText();
                 if (!text.empty() && text.back() == '\n') text.pop_back();
                 std::string result = isPretty ? FlatJson(text) : PrettyJson(text);
@@ -453,6 +454,7 @@ void App::DrawMenuBar(bool& running) {
                     tab.modified = true;
                 }
             }
+            ImGui::PopStyleColor(3);
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip(isPretty ? "JSON'u tek satira indir" : "JSON'u girintili goster");
         }
