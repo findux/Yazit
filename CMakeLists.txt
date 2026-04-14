@@ -30,6 +30,7 @@ find_package(Lua                REQUIRED)   # lua via vcpkg
 
 # ── Kaynak dosyalar ───────────────────────────────────────────────────────────
 add_executable(${PROJECT_NAME} WIN32
+    # Kaynak (.cpp)
     src/main.cpp
     src/App.cpp
     src/EditorTab.cpp
@@ -39,6 +40,17 @@ add_executable(${PROJECT_NAME} WIN32
     src/imgui_impl_sdl2.cpp
     src/ImGuiColorTextEdit/TextEditor.cpp
     src/app.rc
+
+    # Başlık (.h) — derlemeye katılmaz, VS proje gezgininde görünür
+    src/App.h
+    src/EditorTab.h
+    src/FileDialogs.h
+    src/FindState.h
+    src/LuaEngine.h
+    src/imgui_impl_sdl2.h
+    src/imgui_impl_opengl3.h
+    src/imgui_impl_opengl3_loader.h
+    src/ImGuiColorTextEdit/TextEditor.h
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "YAZIT")
