@@ -2026,6 +2026,14 @@ const TextEditor::Palette & TextEditor::GetDarkPalette()
 			0x40000000, // Current line fill
 			0x40808080, // Current line fill (inactive)
 			0x40a0a0a0, // Current line edge
+			// G-Code
+			0xff325fff, // GCodeMotion  — turuncu-kırmızı (G00/G01/G02/G03)
+			0xffff8cc8, // GCodeModal   — açık mor         (G90/G54)
+			0xffd7d746, // GCodeMCode   — cyan             (M3/M30)
+			0xffffb95a, // GCodeAxis    — açık mavi        (X Y Z)
+			0xff46d2ff, // GCodeFeed    — altın sarı       (F S T H)
+			0xffa591ff, // GCodeArc     — pembe            (I J K R)
+			0xff828278, // GCodeLineNum — gri              (N100)
 		} };
 	return p;
 }
@@ -2054,6 +2062,14 @@ const TextEditor::Palette & TextEditor::GetLightPalette()
 			0x40000000, // Current line fill
 			0x40808080, // Current line fill (inactive)
 			0x40000000, // Current line edge
+			// G-Code
+			0xff002dc8, // GCodeMotion  — koyu kırmızı-turuncu (G00/G01/G02/G03)
+			0xffaf1e78, // GCodeModal   — mor                   (G90/G54)
+			0xff919100, // GCodeMCode   — teal                  (M3/M30)
+			0xffc84b00, // GCodeAxis    — mavi                  (X Y Z)
+			0xff00699b, // GCodeFeed    — koyu sarı             (F S T H)
+			0xff4628b9, // GCodeArc     — koyu pembe            (I J K R)
+			0xff737369, // GCodeLineNum — gri                   (N100)
 		} };
 	return p;
 }
@@ -2082,6 +2098,14 @@ const TextEditor::Palette & TextEditor::GetRetroBluePalette()
 			0x40000000, // Current line fill
 			0x40808080, // Current line fill (inactive)
 			0x40000000, // Current line edge
+			// G-Code (retro blue için benzer renkler)
+			0xff0080ff, // GCodeMotion
+			0xffff80ff, // GCodeModal
+			0xff80ffff, // GCodeMCode
+			0xffffffff, // GCodeAxis
+			0xff00ffff, // GCodeFeed
+			0xffff8080, // GCodeArc
+			0xff808080, // GCodeLineNum
 		} };
 	return p;
 }

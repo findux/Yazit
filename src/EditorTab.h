@@ -49,38 +49,36 @@ static TextEditor::LanguageDefinition GCodeLangDef() {
 
         // ── Regex'ler öncelik sırasıyla (ilk eşleşen kazanır) ─────────────────
 
-        // N satır numaraları: N10, N0100 vb.  →  Preprocessor (gri)
-        def.mTokenRegexStrings.push_back({ "[Nn][0-9]+", PI::Preprocessor });
+        // N satır numaraları: N10, N0100 vb.
+        def.mTokenRegexStrings.push_back({ "[Nn][0-9]+", PI::GCodeLineNum });
 
-        // Hareket G-kodları (kesme/hareket): G0/G00‥G4/G04, G28,G29,G30,G38,
-        //   G73,G76, G80‥G89  →  Keyword (turuncu-kırmızı)
+        // Hareket G-kodları: G0/G00‥G4/G04, G28, G29, G30, G38, G73, G76, G80‥G89
         def.mTokenRegexStrings.push_back({
             "[Gg](?:0*[0-4]|2[89]|3[08]|7[36]|8[0-9])(?![0-9])",
-            PI::Keyword });
+            PI::GCodeMotion });
 
-        // Modal/koordinat G-kodları: G10,G17‥G21,G40‥G49,G53‥G59,G61,G64,
-        //   G90‥G99 — catch-all: herhangi bir G + rakam  →  KnownIdentifier (mor)
-        def.mTokenRegexStrings.push_back({ "[Gg][0-9]+", PI::KnownIdentifier });
+        // Modal/koordinat G-kodları: catch-all — kalan tüm G-kodları
+        def.mTokenRegexStrings.push_back({ "[Gg][0-9]+", PI::GCodeModal });
 
-        // M-kodları: M0‥M99 vb.  →  CharLiteral (cyan)
-        def.mTokenRegexStrings.push_back({ "[Mm][0-9]+", PI::CharLiteral });
+        // M-kodları
+        def.mTokenRegexStrings.push_back({ "[Mm][0-9]+", PI::GCodeMCode });
 
-        // Eksen harfleri + değer: X, Y, Z, A, B, C  →  Identifier (mavi)
+        // Eksen harfleri + değer: X Y Z A B C
         def.mTokenRegexStrings.push_back({
             "[XYZABCxyzabc][+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
-            PI::Identifier });
+            PI::GCodeAxis });
 
-        // Besleme/hız/takım/ofset: F, S, T, H, D + değer  →  PreprocIdentifier (altın sarı)
+        // Besleme/hız/takım/ofset: F S T H D
         def.mTokenRegexStrings.push_back({
             "[FSTHDfsthdDd][+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
-            PI::PreprocIdentifier });
+            PI::GCodeFeed });
 
-        // Yay merkezi/döngü parametreleri: I, J, K, R, P, Q, L, E + değer  →  String (pembe)
+        // Yay/döngü parametreleri: I J K R P Q L E
         def.mTokenRegexStrings.push_back({
             "[IJKRPQLEijkrpqle][+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
-            PI::String });
+            PI::GCodeArc });
 
-        // Serbest sayılar  →  Number (yeşil)
+        // Serbest sayılar
         def.mTokenRegexStrings.push_back({
             "[+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)", PI::Number });
 

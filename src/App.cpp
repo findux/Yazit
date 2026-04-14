@@ -47,33 +47,31 @@ void App::ApplyEditorPalette(TextEditor& editor, int langIdx) {
         for (size_t i = (size_t)PI::Default; i < (size_t)PI::Background; ++i)
             p[i] = fg;
     }
-    else if (langIdx == 8) {  // G-Code: her token grubuna ayrı renk
+    else if (langIdx == 8) {  // G-Code: her token grubuna özgü PaletteIndex
         if (dark) {
-            // Koyu tema
-            p[(size_t)PI::Keyword]           = IM_COL32(255,  95,  50, 255); // turuncu-kırmızı → G0/G1/G2/G3 hareket
-            p[(size_t)PI::KnownIdentifier]   = IM_COL32(200, 140, 255, 255); // açık mor        → G90/G54 modal
-            p[(size_t)PI::CharLiteral]       = IM_COL32( 70, 215, 215, 255); // cyan            → M-kodları
-            p[(size_t)PI::Identifier]        = IM_COL32( 90, 185, 255, 255); // mavi            → X Y Z eksenler
-            p[(size_t)PI::PreprocIdentifier] = IM_COL32(255, 210,  70, 255); // altın sarı      → F S T H
-            p[(size_t)PI::String]            = IM_COL32(255, 145, 165, 255); // pembe           → I J K R P Q
-            p[(size_t)PI::Preprocessor]      = IM_COL32(120, 130, 130, 255); // gri             → N satır no
-            p[(size_t)PI::Number]            = IM_COL32(181, 206, 168, 255); // açık yeşil      → serbest sayı
-            p[(size_t)PI::Comment]           = IM_COL32( 90, 155,  90, 255); // yeşil           → ; yorumu
-            p[(size_t)PI::MultiLineComment]  = IM_COL32( 90, 155,  90, 255); // yeşil           → () yorumu
-            p[(size_t)PI::Default]           = IM_COL32(210, 210, 210, 255);
+            p[(size_t)PI::GCodeMotion]  = IM_COL32(255,  95,  50, 255); // turuncu-kırmızı → G00 G01 G02 G03
+            p[(size_t)PI::GCodeModal]   = IM_COL32(200, 140, 255, 255); // açık mor        → G90 G54 G17
+            p[(size_t)PI::GCodeMCode]   = IM_COL32( 70, 215, 215, 255); // cyan            → M3 M30
+            p[(size_t)PI::GCodeAxis]    = IM_COL32( 90, 185, 255, 255); // açık mavi       → X Y Z
+            p[(size_t)PI::GCodeFeed]    = IM_COL32(255, 210,  70, 255); // altın sarı      → F S T H
+            p[(size_t)PI::GCodeArc]     = IM_COL32(255, 145, 165, 255); // pembe           → I J K R
+            p[(size_t)PI::GCodeLineNum] = IM_COL32(120, 130, 130, 255); // gri             → N100
+            p[(size_t)PI::Number]       = IM_COL32(181, 206, 168, 255); // açık yeşil      → serbest sayı
+            p[(size_t)PI::Comment]      = IM_COL32( 90, 155,  90, 255); // yeşil           → ; yorumu
+            p[(size_t)PI::MultiLineComment] = IM_COL32(90, 155, 90, 255); //               → () yorumu
+            p[(size_t)PI::Default]      = IM_COL32(210, 210, 210, 255);
         } else {
-            // Açık tema
-            p[(size_t)PI::Keyword]           = IM_COL32(200,  45,   0, 255); // koyu kırmızı-turuncu → G0/G1/G2/G3
-            p[(size_t)PI::KnownIdentifier]   = IM_COL32(120,  30, 175, 255); // mor                  → G90/G54
-            p[(size_t)PI::CharLiteral]       = IM_COL32(  0, 145, 145, 255); // teal                 → M-kodları
-            p[(size_t)PI::Identifier]        = IM_COL32(  0,  75, 200, 255); // mavi                 → X Y Z
-            p[(size_t)PI::PreprocIdentifier] = IM_COL32(155, 105,   0, 255); // koyu sarı            → F S T H
-            p[(size_t)PI::String]            = IM_COL32(185,  40,  70, 255); // koyu pembe           → I J K R
-            p[(size_t)PI::Preprocessor]      = IM_COL32(105, 115, 115, 255); // gri                  → N satır no
-            p[(size_t)PI::Number]            = IM_COL32(  9, 134,  88, 255); // yeşil                → serbest sayı
-            p[(size_t)PI::Comment]           = IM_COL32( 55, 120,  55, 255); // koyu yeşil           → ; yorumu
-            p[(size_t)PI::MultiLineComment]  = IM_COL32( 55, 120,  55, 255); // koyu yeşil           → () yorumu
-            p[(size_t)PI::Default]           = IM_COL32( 30,  30,  30, 255);
+            p[(size_t)PI::GCodeMotion]  = IM_COL32(200,  45,   0, 255); // koyu kırmızı   → G00 G01 G02 G03
+            p[(size_t)PI::GCodeModal]   = IM_COL32(120,  30, 175, 255); // mor             → G90 G54 G17
+            p[(size_t)PI::GCodeMCode]   = IM_COL32(  0, 145, 145, 255); // teal            → M3 M30
+            p[(size_t)PI::GCodeAxis]    = IM_COL32(  0,  75, 200, 255); // mavi            → X Y Z
+            p[(size_t)PI::GCodeFeed]    = IM_COL32(155, 105,   0, 255); // koyu sarı       → F S T H
+            p[(size_t)PI::GCodeArc]     = IM_COL32(185,  40,  70, 255); // koyu pembe      → I J K R
+            p[(size_t)PI::GCodeLineNum] = IM_COL32(105, 115, 115, 255); // gri             → N100
+            p[(size_t)PI::Number]       = IM_COL32(  9, 134,  88, 255); // yeşil           → serbest sayı
+            p[(size_t)PI::Comment]      = IM_COL32( 55, 120,  55, 255); // koyu yeşil      → ; yorumu
+            p[(size_t)PI::MultiLineComment] = IM_COL32(55, 120, 55, 255); //               → () yorumu
+            p[(size_t)PI::Default]      = IM_COL32( 30,  30,  30, 255);
         }
     }
     else if (langIdx == 7) {  // JSON: temaya özgü renkler

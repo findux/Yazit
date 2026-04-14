@@ -36,6 +36,14 @@ public:
 		CurrentLineFill,
 		CurrentLineFillInactive,
 		CurrentLineEdge,
+		// G-Code'a özgü token renkleri
+		GCodeMotion,     // G00 G01 G02 G03 — hareket/kesme kodları
+		GCodeModal,      // G90 G54 G17    — modal/koordinat kodları
+		GCodeMCode,      // M3 M5 M30      — makine kodları
+		GCodeAxis,       // X Y Z A B C   — eksen harfleri + değer
+		GCodeFeed,       // F S T H D     — besleme/hız/takım
+		GCodeArc,        // I J K R P Q L — yay/döngü parametreleri
+		GCodeLineNum,    // N100           — satır numarası
 		Max
 	};
 
