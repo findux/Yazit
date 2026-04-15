@@ -83,6 +83,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${LUA_LIBRARIES}
 )
 
+# ── MSVC Runtime DLL'leri (MSVCP140 / VCRUNTIME140 / VCRUNTIME140_1) ─────────
+if(MSVC)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
+    set(CMAKE_INSTALL_UCRT_LIBRARIES             FALSE)   # ucrt zaten Windows'ta var
+    set(CMAKE_INSTALL_OPENMP_LIBRARIES           FALSE)
+    include(InstallRequiredSystemLibraries)
+endif()
+
 # ── Kurulum (dist/ klasörü) ───────────────────────────────────────────────────
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION .

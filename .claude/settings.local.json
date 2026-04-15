@@ -91,7 +91,18 @@
       "Bash(powershell.exe -Command \"& 'D:\\\\Uzay\\\\vcpkg\\\\vcpkg.exe' install 'imgui[docking-experimental,opengl3-binding]:x64-windows' 2>&1 | Select-Object -Last 10\")",
       "Bash(powershell.exe -Command \"& 'D:\\\\Uzay\\\\vcpkg\\\\vcpkg.exe' install 'imgui[docking-experimental,opengl3-binding]:x64-windows' --recurse 2>&1 | Select-Object -Last 10\")",
       "Bash(powershell.exe -Command \"Get-ChildItem 'D:\\\\Yazit\\\\src' -Filter '*.h' -Recurse | Select-Object FullName\")",
-      "Bash(cmake -S \"D:/Yazit\" -B \"D:/Yazit/build\")"
+      "Bash(cmake -S \"D:/Yazit\" -B \"D:/Yazit/build\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'D:\\\\Yazit\\\\dist\\\\' | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'D:\\\\Yazit\\\\build\\\\Release\\\\' -Filter '*.dll' | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"& 'C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\VC\\\\Tools\\\\MSVC\\\\14.44.35207\\\\bin\\\\Hostx64\\\\x64\\\\dumpbin.exe' /dependents 'D:\\\\Yazit\\\\build\\\\Release\\\\YAZIT.exe' 2>&1 | Select-String '\\\\.dll'\")",
+      "Bash(powershell.exe -Command ':*)",
+      "Bash(cmake --install build --config Release --prefix D:/Yazit/dist)",
+      "Bash(dumpbin /dependents YAZIT.exe)",
+      "Bash(cmd /c '\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/HostX64/x64/dumpbin.exe\" /dependents D:/Yazit/dist/YAZIT.exe')",
+      "Bash('C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/HostX64/x64/dumpbin.exe' /dependents D:/Yazit/dist/YAZIT.exe)",
+      "Bash(powershell -Command \"& 'C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/HostX64/x64/dumpbin.exe' /dependents 'D:/Yazit/dist/YAZIT.exe'\")",
+      "Bash(powershell -Command ':*)",
+      "Bash(cmake --build build --config Release --clean-first)"
     ]
   }
 }
