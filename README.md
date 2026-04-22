@@ -69,6 +69,10 @@ cmake --build build --config Release
 
 6- (Yapıldı v1.4.1) json desteği "düzleştir/güzelleştir" görünümü eklenecek.
 
+7- Dosyayı uygulama üstüne sürükleyip bıraktığımızda açsın.
+
+8- Shift+Alt+ ↑ veya ↓ ile çoklu imleç yerleştirme.
+
 ## Lisans
 
 Bu proje **MIT Lisansı** ile lisanslanmıştır. Ayrıntılar için [`LICENSE`](LICENSE) dosyasına bakın.
