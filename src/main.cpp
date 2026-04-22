@@ -99,12 +99,21 @@ int main(int argc, char** argv) {
         if (wargv) LocalFree(wargv);
     }
 
+    // Sürükle-bırak olaylarını etkinleştir
+    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+
     bool running = true;
     while (running) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             ImGui_ImplSDL2_ProcessEvent(&ev);
-            if (ev.type == SDL_QUIT) app.RequestExit(running);
+            if (ev.type == SDL_QUIT) {
+                app.RequestExit(running);
+            } else if (ev.type == SDL_DROPFILE && ev.drop.file) {
+                // Sürükle-bırak: SDL2 dosya yolunu UTF-8 olarak verir
+                app.OpenFile(ev.drop.file);
+                SDL_free(ev.drop.file);
+            }
         }
 
         ImGui_ImplOpenGL3_NewFrame();
