@@ -73,6 +73,8 @@ cmake --build build --config Release
 
 8- Shift+Alt+ ↑ veya ↓ ile çoklu imleç yerleştirme.
 
+9- Otomatik kod tamamlama
+
 ## Lisans
 
 Bu proje **MIT Lisansı** ile lisanslanmıştır. Ayrıntılar için [`LICENSE`](LICENSE) dosyasına bakın.
