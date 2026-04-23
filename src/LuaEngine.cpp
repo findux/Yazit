@@ -108,7 +108,7 @@ static int lf_get_all_paths(lua_State* L) {
 static int lf_insert(lua_State* L) {
     App* app = GetApp(L);
     const char* text = luaL_checkstring(L, 1);
-    app->ActiveTab().editor.InsertText(text);
+    app->ActiveTab().editor.InsertTextAtCursor(text);
     app->ActiveTab().modified = true;
     return 0;
 }

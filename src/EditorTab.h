@@ -13,98 +13,19 @@ static const char* kLangNames[] = {
     "C++", "C", "GLSL", "Lua", "SQL", "AngelScript", "Rust", "JSON", "G-Code", "Düz Metin"
 };
 
-// JSON için özel dil tanımı (TextEditor sözdizim vurgulama)
-static TextEditor::LanguageDefinition JsonLangDef() {
-    static bool inited = false;
-    static TextEditor::LanguageDefinition def;
-    if (!inited) {
-        // Anahtar kelimeler
-        for (auto& kw : { "true", "false", "null" })
-            def.mKeywords.insert(kw);
-
-        using PI = TextEditor::PaletteIndex;
-        // String:  "..." (kaçış sekansları dahil)
-        def.mTokenRegexStrings.push_back({ "\\\"(\\\\.|[^\\\"])*\\\"", PI::String });
-        // Sayı:    tam sayı ve ondalıklı
-        def.mTokenRegexStrings.push_back({ "-?[0-9]+\\.?[0-9]*([eE][+-]?[0-9]+)?", PI::Number });
-        // Noktalama
-        def.mTokenRegexStrings.push_back({ "[\\{\\}\\[\\]:,]", PI::Punctuation });
-        // Tanımlayıcı (true/false/null anahtar kelime olarak renklendirilir)
-        def.mTokenRegexStrings.push_back({ "[a-zA-Z_][a-zA-Z0-9_]*", PI::Identifier });
-
-        def.mName             = "JSON";
-        def.mCaseSensitive    = true;
-        def.mAutoIndentation  = true;
-        inited = true;
-    }
-    return def;
-}
-
-// G-Code dil tanımı — her token grubu ayrı PaletteIndex ile renklendiriliyor
-static TextEditor::LanguageDefinition GCodeLangDef() {
-    static bool inited = false;
-    static TextEditor::LanguageDefinition def;
-    if (!inited) {
-        using PI = TextEditor::PaletteIndex;
-
-        // ── Regex'ler öncelik sırasıyla (ilk eşleşen kazanır) ─────────────────
-
-        // N satır numaraları: N10, N0100 vb.
-        def.mTokenRegexStrings.push_back({ "[Nn][0-9]+", PI::GCodeLineNum });
-
-        // Hareket G-kodları: G0/G00‥G4/G04, G28, G29, G30, G38, G73, G76, G80‥G89
-        def.mTokenRegexStrings.push_back({
-            "[Gg](?:0*[0-4]|2[89]|3[08]|7[36]|8[0-9])(?![0-9])",
-            PI::GCodeMotion });
-
-        // Modal/koordinat G-kodları: catch-all — kalan tüm G-kodları
-        def.mTokenRegexStrings.push_back({ "[Gg][0-9]+", PI::GCodeModal });
-
-        // M-kodları
-        def.mTokenRegexStrings.push_back({ "[Mm][0-9]+", PI::GCodeMCode });
-
-        // Eksen harfleri + değer: X Y Z A B C
-        def.mTokenRegexStrings.push_back({
-            "[XYZABCxyzabc][+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
-            PI::GCodeAxis });
-
-        // Besleme/hız/takım/ofset: F S T H D
-        def.mTokenRegexStrings.push_back({
-            "[FSTHDfsthdDd][+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
-            PI::GCodeFeed });
-
-        // Yay/döngü parametreleri: I J K R P Q L E
-        def.mTokenRegexStrings.push_back({
-            "[IJKRPQLEijkrpqle][+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)",
-            PI::GCodeArc });
-
-        // Serbest sayılar
-        def.mTokenRegexStrings.push_back({
-            "[+-]?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)", PI::Number });
-
-        def.mSingleLineComment = ";";
-        def.mCommentStart      = "(";
-        def.mCommentEnd        = ")";
-        def.mName              = "G-Code";
-        def.mCaseSensitive     = false;
-        def.mAutoIndentation   = false;
-        inited = true;
-    }
-    return def;
-}
-
-static TextEditor::LanguageDefinition LangByIdx(int i) {
+static TextEditor::LanguageDefinitionId LangByIdx(int i) {
+    using ID = TextEditor::LanguageDefinitionId;
     switch (i) {
-        case 0: return TextEditor::LanguageDefinition::CPlusPlus();
-        case 1: return TextEditor::LanguageDefinition::C();
-        case 2: return TextEditor::LanguageDefinition::GLSL();
-        case 3: return TextEditor::LanguageDefinition::Lua();
-        case 4: return TextEditor::LanguageDefinition::SQL();
-        case 5: return TextEditor::LanguageDefinition::AngelScript();
-        case 6: return TextEditor::LanguageDefinition::Rust();
-        case 7: return JsonLangDef();
-        case 8: return GCodeLangDef();
-        default: return {};
+        case 0: return ID::Cpp;
+        case 1: return ID::C;
+        case 2: return ID::Glsl;
+        case 3: return ID::Lua;
+        case 4: return ID::Sql;
+        case 5: return ID::AngelScript;
+        case 6: return ID::Rust;
+        case 7: return ID::Json;
+        case 8: return ID::GCode;
+        default: return ID::None;
     }
 }
 

@@ -196,7 +196,7 @@ void App::Init(SDL_Window* window) {
     wantFocusL = false;
 
     // Lua betik editörü
-    m_luaEditor.SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
+    m_luaEditor.SetLanguageDefinition(TextEditor::LanguageDefinitionId::Lua);
     m_luaEditor.SetShowWhitespaces(false);
     m_luaEditor.SetText(
         "--[[\n"
@@ -531,7 +531,7 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
 
     if (active >= 0 && active < (int)tabs.size()) {
         EditorTab& tab = tabs[active];
-        tab.editor.Render("##Ed", ImGui::GetContentRegionAvail());
+        tab.editor.Render("##Ed", false, ImGui::GetContentRegionAvail());
         if (tab.editor.IsTextChanged()) tab.modified = true;
     }
 
@@ -685,7 +685,7 @@ void App::DrawLuaWindow() {
     float outH   = totalH - edH - 30.0f;
 
     // Betik editörü
-    m_luaEditor.Render("##LuaEd", {-1.0f, edH});
+    m_luaEditor.Render("##LuaEd", false, {-1.0f, edH});
 
     ImGui::Separator();
     ImGui::Text("Cikti:");
