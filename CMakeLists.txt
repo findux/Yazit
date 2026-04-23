@@ -39,6 +39,7 @@ add_executable(${PROJECT_NAME} WIN32
     src/LuaEngine.cpp
     src/imgui_impl_sdl2.cpp
     src/ImGuiColorTextEdit/TextEditor.cpp
+    src/ImGuiColorTextEdit/LanguageDefinitions.cpp
     src/app.rc
 
     # Başlık (.h) — derlemeye katılmaz, VS proje gezgininde görünür

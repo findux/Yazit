@@ -103,7 +103,7 @@ bool FindState::FindNext(EditorTab& tab, bool fwd) {
 void FindState::ReplaceNext(EditorTab& tab) {
     auto sel = tab.editor.GetSelectedText();
     if (!FindAll(sel).empty()) {
-        tab.editor.InsertText(replace);
+        tab.editor.InsertTextAtCursor(replace);
         tab.modified = true;
     }
     FindNext(tab, true);

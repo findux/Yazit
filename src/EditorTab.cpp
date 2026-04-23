@@ -84,7 +84,7 @@ FILETIME EditorTab::ReadFileMTime(const std::string& utf8path) {
 
 // ─── Yapıcı ──────────────────────────────────────────────────────────────────
 EditorTab::EditorTab() : id(s_NextId++) {
-    editor.SetLanguageDefinition(TextEditor::LanguageDefinition::CPlusPlus());
+    editor.SetLanguageDefinition(TextEditor::LanguageDefinitionId::Cpp);
     editor.SetShowWhitespaces(false);
 }
 

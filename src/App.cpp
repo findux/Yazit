@@ -38,63 +38,65 @@ void App::SetTheme(Theme t) {
 // ─── Editör paleti ────────────────────────────────────────────────────────────
 void App::ApplyEditorPalette(TextEditor& editor, int langIdx) {
     bool dark = (m_theme == Theme::Dark);
-    auto p    = dark ? TextEditor::GetDarkPalette() : TextEditor::GetLightPalette();
 
-    using PI = TextEditor::PaletteIndex;
+    // SetPalette(PaletteId) fork'un 0xRRGGBBAA depolama formatını ImGui'nin
+    // 0xAABBGGRR (IM_COL32) formatına dönüştürür. Compat overload bunu yapmaz,
+    // bu yüzden base paleti her zaman PaletteId ile set ediyoruz.
+    editor.SetPalette(dark ? TextEditor::PaletteId::Dark : TextEditor::PaletteId::Light);
+
+    using PI  = TextEditor::PaletteIndex;
+    auto& p   = editor.mPalette;   // artık ImGui native formatında; IM_COL32 ile doğrudan yaz
 
     if (langIdx == 9) {  // Düz Metin: tüm syntax renklerini Default'a eşitle
         ImU32 fg = p[(size_t)PI::Default];
         for (size_t i = (size_t)PI::Default; i < (size_t)PI::Background; ++i)
             p[i] = fg;
     }
-    else if (langIdx == 8) {  // G-Code: her token grubuna özgü PaletteIndex
+    else if (langIdx == 8) {  // G-Code
         if (dark) {
-            p[(size_t)PI::GCodeMotion]  = IM_COL32(255,  95,  50, 255); // turuncu-kırmızı → G00 G01 G02 G03
-            p[(size_t)PI::GCodeModal]   = IM_COL32(200, 140, 255, 255); // açık mor        → G90 G54 G17
-            p[(size_t)PI::GCodeMCode]   = IM_COL32( 70, 215, 215, 255); // cyan            → M3 M30
-            p[(size_t)PI::GCodeAxis]    = IM_COL32( 90, 185, 255, 255); // açık mavi       → X Y Z
-            p[(size_t)PI::GCodeFeed]    = IM_COL32(255, 210,  70, 255); // altın sarı      → F S T H
-            p[(size_t)PI::GCodeArc]     = IM_COL32(255, 145, 165, 255); // pembe           → I J K R
-            p[(size_t)PI::GCodeLineNum] = IM_COL32(120, 130, 130, 255); // gri             → N100
-            p[(size_t)PI::Number]       = IM_COL32(181, 206, 168, 255); // açık yeşil      → serbest sayı
-            p[(size_t)PI::Comment]      = IM_COL32( 90, 155,  90, 255); // yeşil           → ; yorumu
-            p[(size_t)PI::MultiLineComment] = IM_COL32(90, 155, 90, 255); //               → () yorumu
-            p[(size_t)PI::Default]      = IM_COL32(210, 210, 210, 255);
+            p[(size_t)PI::GCodeMotion]      = IM_COL32(255,  95,  50, 255); // turuncu-kırmızı → G00 G01 G02 G03
+            p[(size_t)PI::GCodeModal]       = IM_COL32(200, 140, 255, 255); // açık mor        → G90 G54 G17
+            p[(size_t)PI::GCodeMCode]       = IM_COL32( 70, 215, 215, 255); // cyan            → M3 M30
+            p[(size_t)PI::GCodeAxis]        = IM_COL32( 90, 185, 255, 255); // açık mavi       → X Y Z
+            p[(size_t)PI::GCodeFeed]        = IM_COL32(255, 210,  70, 255); // altın sarı      → F S T H
+            p[(size_t)PI::GCodeArc]         = IM_COL32(255, 145, 165, 255); // pembe           → I J K R
+            p[(size_t)PI::GCodeLineNum]     = IM_COL32(120, 130, 130, 255); // gri             → N100
+            p[(size_t)PI::Number]           = IM_COL32(181, 206, 168, 255); // açık yeşil      → serbest sayı
+            p[(size_t)PI::Comment]          = IM_COL32( 90, 155,  90, 255); // yeşil           → ; yorumu
+            p[(size_t)PI::MultiLineComment] = IM_COL32( 90, 155,  90, 255); //                 → () yorumu
+            p[(size_t)PI::Default]          = IM_COL32(210, 210, 210, 255);
         } else {
-            p[(size_t)PI::GCodeMotion]  = IM_COL32(200,  45,   0, 255); // koyu kırmızı   → G00 G01 G02 G03
-            p[(size_t)PI::GCodeModal]   = IM_COL32(120,  30, 175, 255); // mor             → G90 G54 G17
-            p[(size_t)PI::GCodeMCode]   = IM_COL32(  0, 145, 145, 255); // teal            → M3 M30
-            p[(size_t)PI::GCodeAxis]    = IM_COL32(  0,  75, 200, 255); // mavi            → X Y Z
-            p[(size_t)PI::GCodeFeed]    = IM_COL32(155, 105,   0, 255); // koyu sarı       → F S T H
-            p[(size_t)PI::GCodeArc]     = IM_COL32(185,  40,  70, 255); // koyu pembe      → I J K R
-            p[(size_t)PI::GCodeLineNum] = IM_COL32(105, 115, 115, 255); // gri             → N100
-            p[(size_t)PI::Number]       = IM_COL32(  9, 134,  88, 255); // yeşil           → serbest sayı
-            p[(size_t)PI::Comment]      = IM_COL32( 55, 120,  55, 255); // koyu yeşil      → ; yorumu
-            p[(size_t)PI::MultiLineComment] = IM_COL32(55, 120, 55, 255); //               → () yorumu
-            p[(size_t)PI::Default]      = IM_COL32( 30,  30,  30, 255);
+            p[(size_t)PI::GCodeMotion]      = IM_COL32(200,  45,   0, 255); // koyu kırmızı → G00 G01 G02 G03
+            p[(size_t)PI::GCodeModal]       = IM_COL32(120,  30, 175, 255); // mor           → G90 G54 G17
+            p[(size_t)PI::GCodeMCode]       = IM_COL32(  0, 145, 145, 255); // teal          → M3 M30
+            p[(size_t)PI::GCodeAxis]        = IM_COL32(  0,  75, 200, 255); // mavi          → X Y Z
+            p[(size_t)PI::GCodeFeed]        = IM_COL32(155, 105,   0, 255); // koyu sarı     → F S T H
+            p[(size_t)PI::GCodeArc]         = IM_COL32(185,  40,  70, 255); // koyu pembe    → I J K R
+            p[(size_t)PI::GCodeLineNum]     = IM_COL32(105, 115, 115, 255); // gri           → N100
+            p[(size_t)PI::Number]           = IM_COL32(  9, 134,  88, 255); // yeşil         → serbest sayı
+            p[(size_t)PI::Comment]          = IM_COL32( 55, 120,  55, 255); // koyu yeşil    → ; yorumu
+            p[(size_t)PI::MultiLineComment] = IM_COL32( 55, 120,  55, 255); //               → () yorumu
+            p[(size_t)PI::Default]          = IM_COL32( 30,  30,  30, 255);
         }
     }
-    else if (langIdx == 7) {  // JSON: temaya özgü renkler
+    else if (langIdx == 7) {  // JSON
         if (dark) {
-            // Koyu tema — VSCode Dark+ esinli
-            p[(size_t)PI::String]      = IM_COL32(206, 145, 120, 255); // salmon  → string değerleri
+            p[(size_t)PI::String]      = IM_COL32(206, 145, 120, 255); // salmon     → string değerleri
             p[(size_t)PI::Number]      = IM_COL32(181, 206, 168, 255); // açık yeşil → sayılar
-            p[(size_t)PI::Keyword]     = IM_COL32( 86, 156, 214, 255); // mavi   → true/false/null
-            p[(size_t)PI::Punctuation] = IM_COL32(150, 150, 150, 255); // gri    → {}[],:
-            p[(size_t)PI::Identifier]  = IM_COL32(156, 220, 254, 255); // açık mavi → anahtarlar
-            p[(size_t)PI::Default]     = IM_COL32(212, 212, 212, 255); // açık gri
+            p[(size_t)PI::Keyword]     = IM_COL32( 86, 156, 214, 255); // mavi       → true/false/null
+            p[(size_t)PI::Punctuation] = IM_COL32(150, 150, 150, 255); // gri        → {}[],:
+            p[(size_t)PI::Identifier]  = IM_COL32(156, 220, 254, 255); // açık mavi  → anahtarlar
+            p[(size_t)PI::Default]     = IM_COL32(212, 212, 212, 255);
         } else {
-            // Açık tema — VSCode Light+ esinli
             p[(size_t)PI::String]      = IM_COL32(163,  21,  21, 255); // koyu kırmızı → string değerleri
             p[(size_t)PI::Number]      = IM_COL32(  9, 134,  88, 255); // orman yeşili  → sayılar
             p[(size_t)PI::Keyword]     = IM_COL32(  0,   0, 205, 255); // mavi          → true/false/null
             p[(size_t)PI::Punctuation] = IM_COL32( 80,  80,  80, 255); // koyu gri      → {}[],:
             p[(size_t)PI::Identifier]  = IM_COL32(  0,  16, 128, 255); // lacivert      → anahtarlar
-            p[(size_t)PI::Default]     = IM_COL32( 30,  30,  30, 255); // neredeyse siyah
+            p[(size_t)PI::Default]     = IM_COL32( 30,  30,  30, 255);
         }
     }
-
-    editor.SetPalette(p);
+    // Diğer diller için Dark/Light base palet yeterli; ek override gerekmez.
 }
 
 // ─── Başlık güncelleme ────────────────────────────────────────────────────────
@@ -196,7 +198,7 @@ void App::Init(SDL_Window* window) {
     wantFocusL = false;
 
     // Lua betik editörü
-    m_luaEditor.SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
+    m_luaEditor.SetLanguageDefinition(TextEditor::LanguageDefinitionId::Lua);
     m_luaEditor.SetShowWhitespaces(false);
     m_luaEditor.SetText(
         "--[[\n"
@@ -531,7 +533,7 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
 
     if (active >= 0 && active < (int)tabs.size()) {
         EditorTab& tab = tabs[active];
-        tab.editor.Render("##Ed", ImGui::GetContentRegionAvail());
+        tab.editor.Render("##Ed", false, ImGui::GetContentRegionAvail());
         if (tab.editor.IsTextChanged()) tab.modified = true;
     }
 
@@ -685,7 +687,7 @@ void App::DrawLuaWindow() {
     float outH   = totalH - edH - 30.0f;
 
     // Betik editörü
-    m_luaEditor.Render("##LuaEd", {-1.0f, edH});
+    m_luaEditor.Render("##LuaEd", false, {-1.0f, edH});
 
     ImGui::Separator();
     ImGui::Text("Cikti:");
