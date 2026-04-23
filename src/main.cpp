@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 #include <GL/glew.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -10,8 +11,7 @@
 #include <shellapi.h>
 #include <string>
 
-// Windows'ta argv[] ANSI kodlamasıyla gelir; Türkçe karakterli
-// patikalar için GetCommandLineW + CommandLineToArgvW kullanılmalı.
+// ── Yardımcı: wide → UTF-8 ───────────────────────────────────────────────────
 static std::string WideToUtf8(const wchar_t* w) {
     if (!w || !w[0]) return {};
     int n = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
@@ -20,6 +20,35 @@ static std::string WideToUtf8(const wchar_t* w) {
     return s;
 }
 
+// ── Win32 sürükle-bırak: WndProc alt sınıfı ─────────────────────────────────
+// SDL'in WM_DROPFILES → SDL_DROPFILE dönüşümü UIPI tarafından engellendiğinde
+// mesajı doğrudan Win32 seviyesinde yakalayıp App::OpenFile'a iletiyoruz.
+
+static App*    g_DropApp     = nullptr;
+static WNDPROC g_OrigWndProc = nullptr;
+
+static LRESULT CALLBACK DropWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    if (msg == WM_DROPFILES)
+    {
+        HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+        UINT  count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+        for (UINT i = 0; i < count; i++)
+        {
+            UINT len = DragQueryFileW(hDrop, i, nullptr, 0);
+            std::wstring wp(len + 1, L'\0');
+            DragQueryFileW(hDrop, i, &wp[0], len + 1);
+            wp.resize(len);
+            if (g_DropApp)
+                g_DropApp->OpenFile(WideToUtf8(wp.c_str()));
+        }
+        DragFinish(hDrop);
+        return 0;
+    }
+    return CallWindowProcW(g_OrigWndProc, hwnd, msg, wParam, lParam);
+}
+
+// ── Giriş noktası ─────────────────────────────────────────────────────────────
 int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -51,23 +80,19 @@ int main(int argc, char** argv) {
         char appdata[MAX_PATH];
         if (GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH)) {
             std::string dir = std::string(appdata) + "\\YAZIT";
-            CreateDirectoryA(dir.c_str(), nullptr);   // yoksa oluştur
+            CreateDirectoryA(dir.c_str(), nullptr);
             iniPath = dir + "\\imgui.ini";
         }
     }
     if (!iniPath.empty())
         io.IniFilename = iniPath.c_str();
 
-    // Tema App::Init() içinde SetTheme(Dark) ile uygulanır
-
-    // ── Turkce karakter destekli font ────────────────────────────────────────
-    // Latin-Extended-A blogu: Turkce ozgul harfler (g-breve, s-cedilla, vb.)
+    // ── Türkçe karakter destekli font ────────────────────────────────────────
     static const ImWchar kTurkishRanges[] = {
-        0x0020, 0x00FF,   // Temel Latin + Latin Ek (c-cedilla, u-umlaut, o-umlaut)
-        0x0100, 0x017F,   // Latin Genisletilmis-A (g-breve, s-cedilla, i-dotless, I-dot)
+        0x0020, 0x00FF,
+        0x0100, 0x017F,
         0,
     };
-    // Konsolas yoksa Segoe UI, o da yoksa Arial, hepsi olmadıginda varsayilan
     const char* fontCandidates[] = {
         "C:/Windows/Fonts/consola.ttf",
         "C:/Windows/Fonts/segoeui.ttf",
@@ -87,30 +112,55 @@ int main(int argc, char** argv) {
     App app;
     app.Init(win);
 
-    // Sağ tık veya komut satırından gelen dosyaları aç (UTF-16 ile al)
+    // ── Win32 sürükle-bırak kurulumu ─────────────────────────────────────────
+    // SDL_DROPFILE'a güvenmek yerine WM_DROPFILES'ı doğrudan yakalıyoruz.
+    {
+        SDL_SysWMinfo wm;
+        SDL_VERSION(&wm.version);
+        if (SDL_GetWindowWMInfo(win, &wm))
+        {
+            HWND hwnd = wm.info.win.window;
+
+            // UIPI: Explorer (orta bütünlük) → uygulama (yüksek bütünlük) arasında
+            // WM_DROPFILES'ın geçmesine izin ver
+            ChangeWindowMessageFilterEx(hwnd, WM_DROPFILES, MSGFLT_ALLOW, nullptr);
+            ChangeWindowMessageFilterEx(hwnd, WM_COPYDATA,  MSGFLT_ALLOW, nullptr);
+            ChangeWindowMessageFilterEx(hwnd, 0x0049,       MSGFLT_ALLOW, nullptr); // WM_COPYGLOBALDATA
+
+            // Shell'e bu pencereye dosya bırakılabileceğini bildir
+            DragAcceptFiles(hwnd, TRUE);
+
+            // WndProc alt sınıfla: WM_DROPFILES'ı biz hallederiz,
+            // diğer her şeyi SDL'e iletiyoruz
+            g_DropApp     = &app;
+            g_OrigWndProc = reinterpret_cast<WNDPROC>(
+                                SetWindowLongPtrW(hwnd, GWLP_WNDPROC,
+                                    reinterpret_cast<LONG_PTR>(DropWndProc)));
+        }
+    }
+
+    // ── Komut satırından gelen dosyaları aç (UTF-16) ─────────────────────────
     {
         int wargc = 0;
         wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
         if (wargv && wargc > 1) {
-            app.tabs.clear();   // Init'in açtığı varsayılan boş sekmeyi kapat
+            app.tabs.clear();
             for (int i = 1; i < wargc; i++)
                 app.OpenFile(WideToUtf8(wargv[i]));
         }
         if (wargv) LocalFree(wargv);
     }
 
-    // Sürükle-bırak olaylarını etkinleştir
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-
     bool running = true;
     while (running) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             ImGui_ImplSDL2_ProcessEvent(&ev);
-            if (ev.type == SDL_QUIT) {
+            if (ev.type == SDL_QUIT)
                 app.RequestExit(running);
-            } else if (ev.type == SDL_DROPFILE && ev.drop.file) {
-                // Sürükle-bırak: SDL2 dosya yolunu UTF-8 olarak verir
+            // Not: SDL_DROPFILE artık WndProc tarafından ele alındığı için
+            // buraya ulaşmaz; ama yedek olarak bırakıyoruz.
+            else if (ev.type == SDL_DROPFILE && ev.drop.file) {
                 app.OpenFile(ev.drop.file);
                 SDL_free(ev.drop.file);
             }
