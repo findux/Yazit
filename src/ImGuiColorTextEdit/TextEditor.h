@@ -466,6 +466,14 @@ public:
 
 	bool mTextChanged = false;  // AddUndo'da set edilir, Render başında sıfırlanır
 
+	// Otomatik tamamlama: App katmanı Render'dan önce set eder,
+	// HandleKeyboardInputs içinde tüketilip false'a döner.
+	bool   mExternalTabHandled  = false;
+	bool   mExternalUpHandled   = false;
+	bool   mExternalDownHandled = false;
+	// İç Render() tarafından set edilir — popup konumlandırma için kullanılır
+	ImVec2 mContentStart = {};
+
 	inline bool IsHorizontalScrollbarVisible() const { return mCurrentSpaceWidth > mContentWidth; }
 	inline bool IsVerticalScrollbarVisible() const { return mCurrentSpaceHeight > mContentHeight; }
 	inline int TabSizeAtColumn(int aColumn) const { return mTabSize - (aColumn % mTabSize); }

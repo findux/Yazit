@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#define YAZIT_VERSION "1.4.1"
+#define YAZIT_VERSION "1.4.2"
 
 struct SearchResult {
     int         tabIdx;
@@ -96,6 +96,18 @@ private:
     bool             m_reloadPromptOpen   = false;
     void  CheckExternalChanges();
     void  DrawReloadDialog();
+
+    // ── Otomatik tamamlama ──────────────────────────────────────────────────
+    struct AutoComplete {
+        std::vector<std::string> items;
+        int         sel     = 0;
+        bool        visible = false;
+        std::string prefix;
+    };
+    AutoComplete m_ac;
+    void UpdateAutoComplete(EditorTab& tab);
+    void DrawAutoComplete(EditorTab& tab);
+    void ApplyCompletion(EditorTab& tab, const std::string& word);
 
     // Dosya işlemleri (dialog açar)
     void OpenFileWithDialog();

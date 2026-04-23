@@ -533,12 +533,146 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
 
     if (active >= 0 && active < (int)tabs.size()) {
         EditorTab& tab = tabs[active];
+
+        // Otomatik tamamlama tuş olaylarını Render'dan önce yakala
+        bool editorFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+        if (m_ac.visible && editorFocused) {
+            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, true)) {
+                m_ac.sel = (m_ac.sel - 1 + (int)m_ac.items.size()) % (int)m_ac.items.size();
+                tab.editor.mExternalUpHandled = true;
+            } else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, true)) {
+                m_ac.sel = (m_ac.sel + 1) % (int)m_ac.items.size();
+                tab.editor.mExternalDownHandled = true;
+            } else if (ImGui::IsKeyPressed(ImGuiKey_Tab, false)) {
+                ApplyCompletion(tab, m_ac.items[m_ac.sel]);
+                m_ac = {};
+                tab.editor.mExternalTabHandled = true;
+            } else if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+                m_ac = {};
+            }
+        }
+
         tab.editor.Render("##Ed", false, ImGui::GetContentRegionAvail());
         if (tab.editor.IsTextChanged()) tab.modified = true;
+        UpdateAutoComplete(tab);
+        DrawAutoComplete(tab);
     }
 
     ImGui::EndChild();
     ImGui::PopID();
+}
+
+// ─── Otomatik tamamlama ───────────────────────────────────────────────────────
+
+static std::string GetPrefixAtCursor(const TextEditor& ed) {
+    auto cursor = ed.GetSanitizedCursorCoordinates();
+    auto lines  = ed.GetTextLines();
+    if (cursor.mLine >= (int)lines.size()) return {};
+    const std::string& line = lines[cursor.mLine];
+    int ci = ed.GetCharacterIndexL(cursor);
+    ci = std::min(ci, (int)line.size());
+    int s = ci;
+    while (s > 0 && (std::isalnum((unsigned char)line[s-1]) || line[s-1] == '_'))
+        --s;
+    if (s == ci) return {};
+    return line.substr(s, ci - s);
+}
+
+void App::UpdateAutoComplete(EditorTab& tab) {
+    const auto* lang = tab.editor.mLanguageDefinition;
+    if (!lang) { m_ac = {}; return; }
+
+    std::string prefix = GetPrefixAtCursor(tab.editor);
+    if (prefix.size() < 2) { m_ac = {}; return; }
+    if (prefix == m_ac.prefix && m_ac.visible) return;  // liste geçerliliğini koru
+
+    m_ac.prefix = prefix;
+    m_ac.items.clear();
+
+    auto matches = [&](const std::string& word) {
+        if (word.size() <= prefix.size()) return false;
+        if (lang->mCaseSensitive)
+            return word.compare(0, prefix.size(), prefix) == 0;
+        // büyük-küçük harf duyarsız karşılaştırma
+        for (size_t i = 0; i < prefix.size(); i++)
+            if (std::tolower((unsigned char)word[i]) != std::tolower((unsigned char)prefix[i]))
+                return false;
+        return true;
+    };
+
+    for (const auto& kw : lang->mKeywords)
+        if (matches(kw)) m_ac.items.push_back(kw);
+    for (const auto& id : lang->mIdentifiers)
+        if (matches(id.first)) m_ac.items.push_back(id.first);
+
+    if (m_ac.items.empty()) { m_ac.visible = false; return; }
+
+    std::sort(m_ac.items.begin(), m_ac.items.end());
+    m_ac.items.erase(std::unique(m_ac.items.begin(), m_ac.items.end()), m_ac.items.end());
+    if ((int)m_ac.items.size() > 12) m_ac.items.resize(12);
+
+    m_ac.sel     = 0;
+    m_ac.visible = true;
+}
+
+void App::ApplyCompletion(EditorTab& tab, const std::string& word) {
+    auto cur   = tab.editor.GetSanitizedCursorCoordinates();
+    auto start = TextEditor::Coordinates(cur.mLine, cur.mColumn - (int)m_ac.prefix.size());
+    tab.editor.SetSelection(start, cur);
+    tab.editor.DeleteSelection();        // önce prefix'i sil
+    tab.editor.InsertTextAtCursor(word.c_str());
+    tab.modified = true;
+}
+
+void App::DrawAutoComplete(EditorTab& tab) {
+    if (!m_ac.visible || m_ac.items.empty()) return;
+
+    // Popup ekran konumunu imzalı kursordan hesapla
+    auto   cur  = tab.editor.GetSanitizedCursorCoordinates();
+    float  lineH = tab.editor.mCharAdvance.y * tab.editor.mLineSpacing;
+    ImVec2 cs    = tab.editor.mContentStart;
+    float  popX  = cs.x + (cur.mColumn - (int)m_ac.prefix.size()) * tab.editor.mCharAdvance.x
+                        - tab.editor.mScrollX;
+    float  popY  = cs.y + (cur.mLine - tab.editor.mFirstVisibleLine + 1) * lineH;
+
+    const float popW = 220.f;
+    float rowH  = ImGui::GetTextLineHeightWithSpacing();
+    float popH  = rowH * (int)m_ac.items.size() + 6.f;
+
+    // Ekran sınırı taşması önlemi
+    ImVec2 scr = ImGui::GetIO().DisplaySize;
+    if (popX + popW > scr.x) popX = scr.x - popW;
+    if (popY + popH > scr.y) popY = cs.y + (cur.mLine - tab.editor.mFirstVisibleLine - 1) * lineH - popH;
+
+    ImGui::SetNextWindowPos({popX, popY}, ImGuiCond_Always);
+    ImGui::SetNextWindowSize({popW, popH}, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.95f);
+    ImGuiWindowFlags wf = ImGuiWindowFlags_NoTitleBar  | ImGuiWindowFlags_NoResize    |
+                          ImGuiWindowFlags_NoMove       | ImGuiWindowFlags_NoSavedSettings |
+                          ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                          ImGuiWindowFlags_NoScrollbar  | ImGuiWindowFlags_NoScrollWithMouse;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {2.f, 2.f});
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   {4.f, 1.f});
+    if (ImGui::Begin("##ac", nullptr, wf)) {
+        for (int i = 0; i < (int)m_ac.items.size(); i++) {
+            bool sel = (i == m_ac.sel);
+            if (sel) ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.26f, 0.59f, 0.98f, 0.40f));
+            ImGui::PushID(i);
+            if (ImGui::Selectable(m_ac.items[i].c_str(), sel,
+                                  ImGuiSelectableFlags_None, {popW - 4.f, rowH})) {
+                ApplyCompletion(tab, m_ac.items[i]);
+                m_ac = {};
+            }
+            ImGui::PopID();
+            if (sel) {
+                ImGui::SetScrollHereY(0.5f);
+                ImGui::PopStyleColor();
+            }
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 // ─── Bul/Değiştir penceresi ──────────────────────────────────────────────────

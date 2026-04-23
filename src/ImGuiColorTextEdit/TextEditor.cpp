@@ -2026,10 +2026,14 @@ void TextEditor::HandleKeyboardInputs(bool aParentIsFocused)
 			Redo();
 		else if (!mReadOnly && isShiftShortcut && ImGui::IsKeyPressed(ImGuiKey_Z))
 			Redo();
-		else if (!alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_UpArrow))
-			MoveUp(1, shift);
-		else if (!alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_DownArrow))
-			MoveDown(1, shift);
+		else if (!alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+			if (!mExternalUpHandled) MoveUp(1, shift);
+			mExternalUpHandled = false;
+		}
+		else if (!alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+			if (!mExternalDownHandled) MoveDown(1, shift);
+			mExternalDownHandled = false;
+		}
 		else if ((isOSX ? !ctrl : !alt) && !super && ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
 			MoveLeft(shift, isWordmoveKey);
 		else if ((isOSX ? !ctrl : !alt) && !super && ImGui::IsKeyPressed(ImGuiKey_RightArrow))
@@ -2097,8 +2101,10 @@ void TextEditor::HandleKeyboardInputs(bool aParentIsFocused)
 			AddCursorForNextOccurrence();
         else if (!mReadOnly && !alt && !ctrl && !shift && !super && (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter)))
 			EnterCharacter('\n', false);
-		else if (!mReadOnly && !alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_Tab))
-			EnterCharacter('\t', shift);
+		else if (!mReadOnly && !alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_Tab)) {
+			if (!mExternalTabHandled) EnterCharacter('\t', shift);
+			mExternalTabHandled = false;
+		}
 		if (!mReadOnly && !io.InputQueueCharacters.empty() && !(ctrl && !alt) && !super) // See https://github.com/santaclose/ImGuiColorTextEdit/pull/34
 		{
 			for (int i = 0; i < io.InputQueueCharacters.Size; i++)
@@ -2280,6 +2286,7 @@ void TextEditor::Render(bool aParentIsFocused)
 	}
 
 	ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+	mContentStart = cursorScreenPos;
 	mScrollX = ImGui::GetScrollX();
 	mScrollY = ImGui::GetScrollY();
 	UpdateViewVariables(mScrollX, mScrollY);
