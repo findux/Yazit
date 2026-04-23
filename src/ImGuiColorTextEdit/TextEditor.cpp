@@ -1686,12 +1686,12 @@ TextEditor::Coordinates TextEditor::FindWordStart(const Coordinates& aFrom) cons
 		charIndex--;
 
 	bool initialIsWordChar = CharIsWordChar(line[charIndex].mChar);
-	bool initialIsSpace = isspace(line[charIndex].mChar);
+	bool initialIsSpace = isspace((unsigned char)line[charIndex].mChar);
 	char initialChar = line[charIndex].mChar;
 	while (Move(lineIndex, charIndex, true, true))
 	{
 		bool isWordChar = CharIsWordChar(line[charIndex].mChar);
-		bool isSpace = isspace(line[charIndex].mChar);
+		bool isSpace = isspace((unsigned char)line[charIndex].mChar);
 		if (initialIsSpace && !isSpace ||
 			initialIsWordChar && !isWordChar ||
 			!initialIsWordChar && !initialIsSpace && initialChar != line[charIndex].mChar)
@@ -1716,14 +1716,14 @@ TextEditor::Coordinates TextEditor::FindWordEnd(const Coordinates& aFrom) const
 		return aFrom;
 
 	bool initialIsWordChar = CharIsWordChar(line[charIndex].mChar);
-	bool initialIsSpace = isspace(line[charIndex].mChar);
+	bool initialIsSpace = isspace((unsigned char)line[charIndex].mChar);
 	char initialChar = line[charIndex].mChar;
 	while (Move(lineIndex, charIndex, false, true))
 	{
 		if (charIndex == line.size())
 			break;
 		bool isWordChar = CharIsWordChar(line[charIndex].mChar);
-		bool isSpace = isspace(line[charIndex].mChar);
+		bool isSpace = isspace((unsigned char)line[charIndex].mChar);
 		if (initialIsSpace && !isSpace ||
 			initialIsWordChar && !isWordChar ||
 			!initialIsWordChar && !initialIsSpace && initialChar != line[charIndex].mChar)
@@ -2761,7 +2761,7 @@ void TextEditor::ColorizeInternal()
 				auto& g = line[currentIndex];
 				auto c = g.mChar;
 
-				if (c != mLanguageDefinition->mPreprocChar && !isspace(c))
+				if (c != mLanguageDefinition->mPreprocChar && !isspace((unsigned char)c))
 					firstChar = false;
 
 				if (currentIndex == (int)line.size() - 1 && line[line.size() - 1].mChar == '\\')
@@ -2837,7 +2837,17 @@ void TextEditor::ColorizeInternal()
 				}
 				if (currentIndex < (int)line.size())
 					line[currentIndex].mPreprocessor = withinPreproc;
-				currentIndex += UTF8CharLength(c);
+				// UTF-8 devam baytlarına da aynı bayrakları kopyala; aksi hâlde
+				// çok-baytlı karakterler (Türkçe, vb.) yorumların içinde yanlış renk alır.
+				{
+					int seqLen = UTF8CharLength(c);
+					for (int k = 1; k < seqLen && (currentIndex + k) < (int)line.size(); k++) {
+						line[currentIndex + k].mComment          = line[currentIndex].mComment;
+						line[currentIndex + k].mMultiLineComment = line[currentIndex].mMultiLineComment;
+						line[currentIndex + k].mPreprocessor     = line[currentIndex].mPreprocessor;
+					}
+					currentIndex += seqLen;
+				}
 				if (currentIndex >= (int)line.size())
 				{
 					currentIndex = 0;
