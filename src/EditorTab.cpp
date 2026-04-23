@@ -161,8 +161,12 @@ bool EditorTab::Save(std::string* outError) {
         return false;
     }
 
+    // Handle kapatılmadan mtime okunursa Windows henüz timestamp'i güncellememiş
+    // olabilir; close() sonrası LastWriteTime kesinleşir.
+    f.close();
+
     modified    = false;
-    diskModTime = ReadFileMTime(path);   // başarılı kayıt sonrası referansı güncelle
+    diskModTime = ReadFileMTime(path);
     return true;
 }
 
