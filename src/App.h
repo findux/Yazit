@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 
+#define YAZIT_VERSION "1.4.1"
+
 struct SearchResult {
     int         tabIdx;
     std::string tabName;

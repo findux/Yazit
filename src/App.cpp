@@ -173,9 +173,9 @@ static void UpdateWindowTitle(SDL_Window* win, const EditorTab& tab) {
     char title[512];
     const std::string& display = tab.path.empty() ? tab.name : tab.path;
     if (tab.modified)
-        snprintf(title, sizeof(title), "YAZIT -%s *", display.c_str());
+        snprintf(title, sizeof(title), "YAZIT v" YAZIT_VERSION " - %s *", display.c_str());
     else
-        snprintf(title, sizeof(title), "YAZIT -%s",   display.c_str());
+        snprintf(title, sizeof(title), "YAZIT v" YAZIT_VERSION " - %s",   display.c_str());
     SDL_SetWindowTitle(win, title);
 }
 
