@@ -582,6 +582,25 @@ void App::UpdateAutoComplete(EditorTab& tab) {
     const auto* lang = tab.editor.mLanguageDefinition;
     if (!lang) { m_ac = {}; return; }
 
+    // Belge değiştiyse kelime listesini yeniden tara
+    if (tab.editor.IsTextChanged() || m_ac.docWords.empty()) {
+        m_ac.docWords.clear();
+        std::string text = tab.editor.GetText();
+        size_t i = 0;
+        while (i < text.size()) {
+            unsigned char c = (unsigned char)text[i];
+            if (std::isalpha(c) || c == '_') {
+                size_t s = i;
+                while (i < text.size() && (std::isalnum((unsigned char)text[i]) || text[i] == '_'))
+                    ++i;
+                if (i - s >= 3)  // çok kısa kelimeleri atla
+                    m_ac.docWords.insert(text.substr(s, i - s));
+            } else {
+                ++i;
+            }
+        }
+    }
+
     std::string prefix = GetPrefixAtCursor(tab.editor);
     if (prefix.size() < 2) { m_ac = {}; return; }
     if (prefix == m_ac.prefix && m_ac.visible) return;  // liste geçerliliğini koru
@@ -593,7 +612,6 @@ void App::UpdateAutoComplete(EditorTab& tab) {
         if (word.size() <= prefix.size()) return false;
         if (lang->mCaseSensitive)
             return word.compare(0, prefix.size(), prefix) == 0;
-        // büyük-küçük harf duyarsız karşılaştırma
         for (size_t i = 0; i < prefix.size(); i++)
             if (std::tolower((unsigned char)word[i]) != std::tolower((unsigned char)prefix[i]))
                 return false;
@@ -604,6 +622,8 @@ void App::UpdateAutoComplete(EditorTab& tab) {
         if (matches(kw)) m_ac.items.push_back(kw);
     for (const auto& id : lang->mIdentifiers)
         if (matches(id.first)) m_ac.items.push_back(id.first);
+    for (const auto& dw : m_ac.docWords)
+        if (matches(dw)) m_ac.items.push_back(dw);
 
     if (m_ac.items.empty()) { m_ac.visible = false; return; }
 

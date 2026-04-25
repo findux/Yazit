@@ -103,6 +103,7 @@ private:
         int         sel     = 0;
         bool        visible = false;
         std::string prefix;
+        std::unordered_set<std::string> docWords;  // belge içinden taranan kelimeler
     };
     AutoComplete m_ac;
     void UpdateAutoComplete(EditorTab& tab);
