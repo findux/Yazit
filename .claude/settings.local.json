@@ -104,7 +104,9 @@
       "Bash(powershell -Command ':*)",
       "Bash(cmake --build build --config Release --clean-first)",
       "Bash(cmake -S . -B build -G \"Visual Studio 17 2022\" -A x64)",
-      "Bash(cmake --build build --config Debug)"
+      "Bash(cmake --build build --config Debug)",
+      "Bash(cmake --build D:/Yazit/build --config Release --target Yazit)",
+      "Bash(\"/c/Program Files \\(x86\\)/NSIS/makensis.exe\" installer.nsi)"
     ]
   }
 }
