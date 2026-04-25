@@ -69,11 +69,11 @@ cmake --build build --config Release
 
 6- (Yapıldı v1.4.1) json desteği "düzleştir/güzelleştir" görünümü eklenecek.
 
-7- Dosyayı uygulama üstüne sürükleyip bıraktığımızda açsın.
+7- (Yapıldı v1.4.2) Dosyayı uygulama üstüne sürükleyip bıraktığımızda açsın.
 
-8- Shift+Alt+ ↑ veya ↓ ile çoklu imleç yerleştirme.
+8- (Yapıldı v1.4.2) Shift+Alt+ ↑ veya ↓ ile çoklu imleç yerleştirme.
 
-9- Otomatik kod tamamlama
+9- (Yapıldı v1.4.2) Otomatik kod tamamlama
 
 ## Lisans
 
