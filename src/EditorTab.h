@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -73,9 +74,26 @@ public:
 
     static std::string Basename(const std::string& p);
 
+    // ── Fold (küme parantezi dürme) ─────────────────────────────────────────
+    struct FoldBlock {
+        std::vector<std::string> hidden; // dürülen satırlar
+    };
+    std::unordered_map<int, FoldBlock> m_folds;  // foldId → blok
+    int  m_nextFoldId = 1;
+
+    bool HasFolds() const { return !m_folds.empty(); }
+    bool ToggleFoldAt(int lineIdx);   // dür/aç
+    void UnfoldAll();                 // kaydetmeden önce tümünü aç
+
+    // fold marker: "/*FOLD:ID:SATIRSAYISI*/"
+    static constexpr const char* kFoldTag = "/*FOLD:";
+    static int ExtractFoldId(const std::string& lineText);
+    int  FindMatchingClose(const std::vector<std::string>& lines, int li, int col) const;
+
 private:
     static bool        IsLikelyAnsi(const std::string& raw);
     static std::string AnsiToUtf8  (const std::string& ansi);
     static std::string Utf8ToAnsi  (const std::string& utf8, bool* lossyOut = nullptr);
+    std::string        GetUnfoldedText() const;  // fold marker'lar olmadan metin döndürür
 };
 

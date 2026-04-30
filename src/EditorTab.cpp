@@ -88,6 +88,164 @@ EditorTab::EditorTab() : id(s_NextId++) {
     editor.SetShowWhitespaces(false);
 }
 
+// ─── Fold yardımcıları ────────────────────────────────────────────────────────
+
+// "/*FOLD:42:15*/" içindeki 42 değerini (fold ID) çıkarır; yoksa 0 döner.
+/*static*/ int EditorTab::ExtractFoldId(const std::string& lineText) {
+    auto pos = lineText.rfind(kFoldTag);
+    if (pos == std::string::npos) return 0;
+    int id = 0;
+    size_t i = pos + strlen(kFoldTag);
+    while (i < lineText.size() && std::isdigit((unsigned char)lineText[i]))
+        id = id * 10 + (lineText[i++] - '0');
+    return id > 0 ? id : 0;
+}
+
+// li/col'dan itibaren eşleşen '}' satırını döndürür; bulunamazsa -1.
+int EditorTab::FindMatchingClose(const std::vector<std::string>& lines, int li, int col) const {
+    int depth = 0;
+    for (int row = li; row < (int)lines.size(); row++) {
+        const std::string& ln = lines[row];
+        size_t jStart = (row == li) ? (size_t)col : 0;
+        bool inStr = false;  char strCh = 0;
+        for (size_t j = jStart; j < ln.size(); j++) {
+            char c = ln[j];
+            if (inStr) {
+                if (c == '\\') ++j;               // kaçış karakteri
+                else if (c == strCh) inStr = false;
+                continue;
+            }
+            if (c == '"' || c == '\'') { inStr = true; strCh = c; continue; }
+            if (c == '/' && j + 1 < ln.size() && ln[j+1] == '/') break; // satır yorumu
+            if (c == '{') ++depth;
+            else if (c == '}') { if (--depth == 0) return row; }
+        }
+    }
+    return -1;
+}
+
+// İmleç satırındaki bloğu dürüp açar; geri dönüş: işlem gerçekleşti mi?
+bool EditorTab::ToggleFoldAt(int lineIdx) {
+    auto lines = editor.GetTextLines();
+    if (lineIdx < 0 || lineIdx >= (int)lines.size()) return false;
+
+    // ── Zaten dürülmüş mü? → Aç ──────────────────────────────────────────
+    int foldId = ExtractFoldId(lines[lineIdx]);
+    if (foldId && m_folds.count(foldId)) {
+        auto& fb = m_folds[foldId];
+        int savedLine = editor.mFirstVisibleLine;
+
+        // Marker'ı satırdan sil
+        auto& fl = lines[lineIdx];
+        auto  mp = fl.rfind(kFoldTag);
+        fl = fl.substr(0, mp);
+        while (!fl.empty() && fl.back() == ' ') fl.pop_back(); // sondaki boşluk
+
+        // Gizlenen satırları geri ekle
+        lines.insert(lines.begin() + lineIdx + 1, fb.hidden.begin(), fb.hidden.end());
+        m_folds.erase(foldId);
+
+        bool wasModified = modified;
+        editor.SetTextLines(lines);
+        editor.mScrollToTop = false;
+        editor.SetViewAtLine(savedLine, TextEditor::SetViewAtLineMode::FirstVisibleLine);
+        modified = wasModified;
+        return true;
+    }
+
+    // ── Dürme: satırda '{' ara ───────────────────────────────────────────
+    const std::string& line = lines[lineIdx];
+    int braceCol = -1;
+    // Önce fold marker kontrolü: eğer başka bir marker varsa atla
+    for (int j = (int)line.size() - 1; j >= 0; j--) {
+        if (line[j] == '{') { braceCol = j; break; }
+    }
+    if (braceCol < 0) return false;
+
+    int endLine = FindMatchingClose(lines, lineIdx, braceCol);
+    if (endLine < 0 || endLine <= lineIdx) return false; // eşleşme yok / boş blok
+
+    // Gizlenecek satırları kaydet (lineIdx+1 .. endLine dahil)
+    FoldBlock fb;
+    fb.hidden.assign(lines.begin() + lineIdx + 1, lines.begin() + endLine + 1);
+
+    int savedLine  = editor.mFirstVisibleLine;
+    int id         = m_nextFoldId++;
+    int hiddenCnt  = endLine - lineIdx;
+
+    // Marker'ı '{' satırına ekle
+    char marker[64];
+    std::snprintf(marker, sizeof(marker), " /*FOLD:%d:%d*/", id, hiddenCnt);
+    lines[lineIdx] += marker;
+
+    // Gizlenecek satırları sil
+    lines.erase(lines.begin() + lineIdx + 1, lines.begin() + endLine + 1);
+
+    m_folds[id] = std::move(fb);
+
+    bool wasModified = modified;
+    editor.SetTextLines(lines);
+    editor.mScrollToTop = false;
+    editor.SetViewAtLine(savedLine, TextEditor::SetViewAtLineMode::FirstVisibleLine);
+    modified = wasModified;
+    return true;
+}
+
+// Tüm fold'ları açar (kaydetme öncesi çağrılır veya dosya yüklenince).
+void EditorTab::UnfoldAll() {
+    for (int iter = 0; iter < 10000 && !m_folds.empty(); ++iter) {
+        auto lines = editor.GetTextLines();
+        bool found = false;
+        for (int li = 0; li < (int)lines.size(); li++) {
+            int fid = ExtractFoldId(lines[li]);
+            if (!fid || !m_folds.count(fid)) continue;
+
+            auto& fb = m_folds[fid];
+            auto& fl = lines[li];
+            auto  mp = fl.rfind(kFoldTag);
+            fl = fl.substr(0, mp);
+            while (!fl.empty() && fl.back() == ' ') fl.pop_back();
+            lines.insert(lines.begin() + li + 1, fb.hidden.begin(), fb.hidden.end());
+            m_folds.erase(fid);
+            editor.SetTextLines(lines);
+            found = true;
+            break;
+        }
+        if (!found) break;
+    }
+    m_folds.clear();
+}
+
+// Fold marker'lar olmaksızın gerçek metni döndürür (kaydetme için).
+std::string EditorTab::GetUnfoldedText() const {
+    auto lines = editor.GetTextLines();
+    // Tüm fold'ları genişlet (orijinal editörü değiştirmeden kopya üzerinde çalış)
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (int li = 0; li < (int)lines.size(); li++) {
+            int fid = ExtractFoldId(lines[li]);
+            if (!fid || !m_folds.count(fid)) continue;
+
+            const auto& fb = m_folds.at(fid);
+            auto& fl = lines[li];
+            auto  mp = fl.rfind(kFoldTag);
+            fl = fl.substr(0, mp);
+            while (!fl.empty() && fl.back() == ' ') fl.pop_back();
+            lines.insert(lines.begin() + li + 1, fb.hidden.begin(), fb.hidden.end());
+            changed = true;
+            break; // baştan tara
+        }
+    }
+    // Satırları birleştir
+    std::string result;
+    for (size_t i = 0; i < lines.size(); i++) {
+        result += lines[i];
+        if (i + 1 < lines.size()) result += '\n';
+    }
+    return result;
+}
+
 // ─── Yükleme ─────────────────────────────────────────────────────────────────
 void EditorTab::Load(const std::string& filePath) {
     path = filePath;
@@ -114,10 +272,12 @@ void EditorTab::Load(const std::string& filePath) {
         editor.SetText(raw);
     }
 
-    langIdx     = LangIdxFromPath(filePath);
+    langIdx      = LangIdxFromPath(filePath);
     editor.SetLanguageDefinition(LangByIdx(langIdx));
-    modified    = false;
-    diskModTime = ReadFileMTime(filePath);   // dış değişiklik tespiti için referans
+    modified     = false;
+    diskModTime  = ReadFileMTime(filePath);   // dış değişiklik tespiti için referans
+    m_folds.clear();
+    m_nextFoldId = 1;
 }
 
 // ─── Kaydetme ────────────────────────────────────────────────────────────────
@@ -127,7 +287,8 @@ bool EditorTab::Save(std::string* outError) {
         return false;
     }
 
-    std::string text = editor.GetText();
+    // Fold varsa marker'sız gerçek metni al; yoksa doğrudan editörden al
+    std::string text = HasFolds() ? GetUnfoldedText() : editor.GetText();
 
     // TextEditor sona fazladan \n ekleyebilir; varsa kırp
     if (!text.empty() && text.back() == '\n')

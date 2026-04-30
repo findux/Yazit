@@ -554,12 +554,111 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
 
         tab.editor.Render("##Ed", false, ImGui::GetContentRegionAvail());
         if (tab.editor.IsTextChanged()) tab.modified = true;
+        DrawFoldIndicators(tab);
         UpdateAutoComplete(tab);
         DrawAutoComplete(tab);
     }
 
     ImGui::EndChild();
     ImGui::PopID();
+}
+
+// ─── Fold göstergesi ─────────────────────────────────────────────────────────
+void App::DrawFoldIndicators(EditorTab& tab) {
+    float lineH = tab.editor.mCharAdvance.y;
+    if (lineH <= 0.f) return;
+
+    int   firstL = tab.editor.mFirstVisibleLine;
+    int   lastL  = tab.editor.mLastVisibleLine;
+    int   total  = (int)tab.editor.mLines.size();
+
+    ImDrawList* dl    = ImGui::GetForegroundDrawList();
+    bool        click = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+    ImVec2      mouse = ImGui::GetMousePos();
+
+    // mTextStart: sol kenar → metin başlangıcı arası piksel (satır numaraları burada)
+    // Gösterge gutter içinde, metnin hemen solunda
+    float textStartX = tab.editor.mContentStart.x + tab.editor.mTextStart;
+    float indX       = textStartX - lineH * 0.65f;
+
+    // TextEditor satırları: cursorScreenPos.y + lineNo * lineH  (mutlak indeks)
+    // Clip rect de aynı formülle → scroll'a bağımsız doğru bölge
+    ImVec2 clipMin = { tab.editor.mContentStart.x,
+                       tab.editor.mContentStart.y + firstL * lineH };
+    ImVec2 clipMax = { tab.editor.mContentStart.x + 9999.f,
+                       tab.editor.mContentStart.y + (lastL + 1) * lineH };
+    dl->PushClipRect(clipMin, clipMax, true);
+
+    for (int li = firstL; li <= lastL && li < total; li++) {
+        const auto& glyphs = tab.editor.mLines[li];
+
+        // Fold marker ve '{' tespiti (görünür satırda)
+        bool hasBrace     = false;
+        bool hasFoldTag   = false;
+        int  foldId       = 0;
+
+        // Sıralı karakter taraması
+        int  tagMatchLen  = (int)std::strlen(EditorTab::kFoldTag);
+        for (int j = 0; j < (int)glyphs.size(); j++) {
+            char c = glyphs[j].mChar;
+            if (c == '{') hasBrace = true;
+
+            // "/*FOLD:" başlangıcı ara
+            if (!hasFoldTag && c == '/' && j + tagMatchLen <= (int)glyphs.size()) {
+                bool match = true;
+                for (int k = 0; k < tagMatchLen && match; k++)
+                    match = (glyphs[j + k].mChar == EditorTab::kFoldTag[k]);
+                if (match) {
+                    hasFoldTag = true;
+                    // ID'yi parse et
+                    int pos = j + tagMatchLen;
+                    while (pos < (int)glyphs.size() && std::isdigit((unsigned char)glyphs[pos].mChar)) {
+                        foldId = foldId * 10 + (glyphs[pos].mChar - '0');
+                        pos++;
+                    }
+                }
+            }
+        }
+
+        bool isFolded = hasFoldTag && foldId > 0 && tab.m_folds.count(foldId);
+
+        // Gösterilecek bir şey yok mu?
+        if (!isFolded && !hasBrace) continue;
+        // Geçersiz/yetim marker'ı yok say
+        if (hasFoldTag && !isFolded) continue;
+
+        float cy  = tab.editor.mContentStart.y + li * lineH + lineH * 0.5f;
+        float sz  = lineH * 0.22f;
+        ImVec2 ctr = { indX, cy };
+
+        if (isFolded) {
+            // ▶ (dürülmüş – sarı/altın)
+            dl->AddTriangleFilled(
+                { ctr.x - sz, ctr.y - sz },
+                { ctr.x - sz, ctr.y + sz },
+                { ctr.x + sz, ctr.y },
+                IM_COL32(220, 180, 50, 230));
+        } else {
+            // ▼ (açılabilir – gri)
+            dl->AddTriangleFilled(
+                { ctr.x - sz, ctr.y - sz * 0.5f },
+                { ctr.x + sz, ctr.y - sz * 0.5f },
+                { ctr.x,      ctr.y + sz },
+                IM_COL32(130, 130, 130, 150));
+        }
+
+        // Tıklama alanı: gösterge etrafında küçük bir kare
+        float hitR = lineH * 0.55f;
+        if (click &&
+            mouse.x >= ctr.x - hitR && mouse.x <= ctr.x + hitR &&
+            mouse.y >= ctr.y - hitR && mouse.y <= ctr.y + hitR)
+        {
+            dl->PopClipRect();          // önce clip rect'i kapat
+            tab.ToggleFoldAt(li);       // mLines boyutunu değiştirebilir
+            return;                     // eski total/lastL ile döngüye devam etme
+        }
+    }
+    dl->PopClipRect();
 }
 
 // ─── Otomatik tamamlama ───────────────────────────────────────────────────────
@@ -898,6 +997,16 @@ void App::HandleShortcuts(bool& running) {
         } else {
             rightActive = (rightActive + 1) % (int)tabs.size();
             wantFocusR = true;
+        }
+    }
+
+    // Fold/Unfold: Ctrl+Minus (dür/aç) — Ctrl+Shift+Minus (tümünü aç)
+    if (ImGui::IsKeyPressed(ImGuiKey_Minus)) {
+        if (io.KeyShift) {
+            ActiveTab().UnfoldAll();
+        } else {
+            auto pos = ActiveTab().editor.GetSanitizedCursorCoordinates();
+            ActiveTab().ToggleFoldAt(pos.mLine);
         }
     }
 }

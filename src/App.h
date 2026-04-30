@@ -74,6 +74,7 @@ private:
     // Çizim yardımcıları
     void DrawMenuBar(bool& running);
     void DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus);
+    void DrawFoldIndicators(EditorTab& tab);
     void DrawFindWindow();
     void DrawResultsPanel();
     void DrawStatusBar();
