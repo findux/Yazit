@@ -21,9 +21,10 @@ public:
     bool useRegex    = false;
     bool wrapAround  = true;
     bool searchDown  = true;
-    bool showWindow  = false;
-    bool showReplace = false;
-    char msg[256]    = {};
+    bool showWindow      = false;
+    bool showReplace     = false;
+    bool wantFocusSearch = false;   // Ctrl+F'de arama kutusuna odak iste
+    char msg[256]        = {};
 
     // Metin içinde tüm eşleşmeleri bul
     std::vector<Match> FindAll(const std::string& text) const;

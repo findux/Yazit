@@ -410,8 +410,14 @@ void App::DrawMenuBar(bool& running) {
 
     // ── Ara ──
     if (ImGui::BeginMenu("Ara")) {
-        if (ImGui::MenuItem("Bul...",             "Ctrl+F")) { findState.showWindow = true; findState.showReplace = false; }
-        if (ImGui::MenuItem("Bul ve Değiştir...", "Ctrl+H")) { findState.showWindow = true; findState.showReplace = true;  }
+        if (ImGui::MenuItem("Bul...",             "Ctrl+F")) {
+            auto sel = ActiveTab().editor.GetSelectedText();
+            if (!sel.empty() && sel.find('\n') == std::string::npos)
+                snprintf(findState.find, sizeof(findState.find), "%s", sel.c_str());
+            findState.showWindow = true; findState.showReplace = false;
+            findState.wantFocusSearch = true;
+        }
+        if (ImGui::MenuItem("Bul ve Değiştir...", "Ctrl+H")) { findState.showWindow = true; findState.showReplace = true; findState.wantFocusSearch = true; }
         ImGui::Separator();
         if (ImGui::MenuItem("Sonraki", "F3")) findState.FindNext(ActiveTab(), true);
         if (ImGui::MenuItem("Önceki",  "F2")) findState.FindNext(ActiveTab(), false);
@@ -840,7 +846,10 @@ void App::DrawFindWindow() {
 
     const float labelW = 80.0f;
     ImGui::Text("Bul:");     ImGui::SameLine(labelW); ImGui::SetNextItemWidth(300);
-    if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+    if (ImGui::IsWindowAppearing() || findState.wantFocusSearch) {
+        ImGui::SetKeyboardFocusHere();
+        findState.wantFocusSearch = false;
+    }
     bool enter = ImGui::InputText("##Find", findState.find, sizeof(findState.find),
                                   ImGuiInputTextFlags_EnterReturnsTrue);
     ImGui::SameLine();
@@ -1016,8 +1025,14 @@ void App::HandleShortcuts(bool& running) {
     if (ImGui::IsKeyPressed(ImGuiKey_S)) {
         if (io.KeyShift) SaveActiveAs(); else SaveActive();
     }
-    if (ImGui::IsKeyPressed(ImGuiKey_F)) { findState.showWindow = true; findState.showReplace = false; }
-    if (ImGui::IsKeyPressed(ImGuiKey_H)) { findState.showWindow = true; findState.showReplace = true;  }
+    if (ImGui::IsKeyPressed(ImGuiKey_F)) {
+        auto sel = ActiveTab().editor.GetSelectedText();
+        if (!sel.empty() && sel.find('\n') == std::string::npos)
+            snprintf(findState.find, sizeof(findState.find), "%s", sel.c_str());
+        findState.showWindow = true; findState.showReplace = false;
+        findState.wantFocusSearch = true;
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_H)) { findState.showWindow = true; findState.showReplace = true; findState.wantFocusSearch = true; }
     if (ImGui::IsKeyPressed(ImGuiKey_Backslash)) splitMode = !splitMode;
     if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
         if (m_activePanel == 0) {
