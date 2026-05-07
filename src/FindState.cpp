@@ -67,8 +67,8 @@ static bool SelectMatch(EditorTab& tab, const Match& m, const std::string& txt) 
     int ts = tab.editor.GetTabSize();
     auto s = IdxToCoord(txt, m.start,         ts);
     auto e = IdxToCoord(txt, m.start + m.len, ts);
-    tab.editor.SetSelection(s, e);
-    tab.editor.SetCursorPosition(s);
+    tab.editor.SetSelection(s, e);   // içinde SetCursorPosition(e, false) var — seçim korunur
+    tab.editor.SetViewAtLine(s.mLine, TextEditor::SetViewAtLineMode::Centered);
     return true;
 }
 
