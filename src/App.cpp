@@ -1000,6 +1000,13 @@ void App::DrawLuaWindow() {
 void App::HandleShortcuts(bool& running) {
     ImGuiIO& io = ImGui::GetIO();
 
+    // Escape: çoklu imleci tek imlece indir (otomatik tamamlama kapalıysa)
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false) && !m_ac.visible) {
+        auto& ed = ActiveTab().editor;
+        if (ed.mState.mCurrentCursor > 0)
+            ed.ClearExtraCursors();
+    }
+
     if (ImGui::IsKeyPressed(ImGuiKey_F5) && m_luaWinOpen)
         luaEngine.Execute(m_luaEditor.GetText());
     if (ImGui::IsKeyPressed(ImGuiKey_F6))

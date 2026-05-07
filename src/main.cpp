@@ -71,7 +71,10 @@ int main(int argc, char** argv) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    // NavEnableKeyboard kapatıldı: metin editöründe Escape tuşu ImGui'nin
+    // NavUpdateCancelRequest fonksiyonu tarafından ele geçirilip child window'dan
+    // çıkılmasına neden oluyordu. Tüm kısayollar uygulama katmanında yönetiliyor.
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     // imgui.ini dosyasını %APPDATA%\Yazit\ altına yönlendir
