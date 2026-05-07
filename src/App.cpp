@@ -522,6 +522,23 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
                 }
                 ImGui::EndTabItem();
             }
+
+            // ── Sağ tık bağlam menüsü ─────────────────────────────────────
+            char ctxId[32];
+            snprintf(ctxId, sizeof(ctxId), "##TabCtx%d", tabs[i].id);
+            if (ImGui::BeginPopupContextItem(ctxId)) {
+                const std::string& fullPath = tabs[i].path;
+                const std::string& fileName = tabs[i].name;
+
+                if (ImGui::MenuItem("Tam Yolu Kopyala")) {
+                    ImGui::SetClipboardText(fullPath.empty()
+                        ? fileName.c_str() : fullPath.c_str());
+                }
+                if (ImGui::MenuItem("Dosya Adını Kopyala")) {
+                    ImGui::SetClipboardText(fileName.c_str());
+                }
+                ImGui::EndPopup();
+            }
             if (!open && (int)tabs.size() > 1) {
                 if (tabs[i].modified && m_closeTabIdx < 0) {
                     // Değişmişse önce sor (OpenPopup tab bar dışında çağrılacak)
@@ -1450,7 +1467,6 @@ void App::SaveActiveAs() {
         }
     }
 }
-
 
 
 
