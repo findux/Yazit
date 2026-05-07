@@ -523,13 +523,25 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
                 ImGui::EndTabItem();
             }
             if (!open && (int)tabs.size() > 1) {
-                tabs.erase(tabs.begin() + i);
-                if (active >= (int)tabs.size()) active = (int)tabs.size() - 1;
-                i--;
+                if (tabs[i].modified && m_closeTabIdx < 0) {
+                    // Değişmişse önce sor (OpenPopup tab bar dışında çağrılacak)
+                    m_closeTabIdx = i;
+                    active = i;
+                } else if (!tabs[i].modified) {
+                    // Temizse direkt kapat
+                    tabs.erase(tabs.begin() + i);
+                    if (active >= (int)tabs.size()) active = (int)tabs.size() - 1;
+                    i--;
+                }
             }
         }
         ImGui::EndTabBar();
     }
+
+    // OpenPopup tab bar ID scope'u dışında çağrılmalı — BeginPopupModal ile eşleşir
+    if (m_closeTabIdx >= 0 && !ImGui::IsPopupOpen("##CloseTabDlg"))
+        ImGui::OpenPopup("##CloseTabDlg");
+    DrawCloseTabDialog();
 
     if (active >= 0 && active < (int)tabs.size()) {
         EditorTab& tab = tabs[active];
@@ -1103,6 +1115,68 @@ void App::DrawReloadDialog() {
         m_reloadQueue.clear();
         m_reloadPromptOpen = false;
     }
+}
+
+// ─── Sekme kapatma onayı ─────────────────────────────────────────────────────
+void App::DrawCloseTabDialog() {
+    if (m_closeTabIdx < 0) return;
+
+    // Geçersiz index koruması (başka bir yerde silinmiş olabilir)
+    if (m_closeTabIdx >= (int)tabs.size()) { m_closeTabIdx = -1; return; }
+
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(),
+                            ImGuiCond_Always, { 0.5f, 0.5f });
+    if (!ImGui::BeginPopupModal("##CloseTabDlg", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoTitleBar)) return;
+
+    ImGui::Dummy({ 0, 4 });
+    ImGui::Text("  \"%s\" dosyasinda kaydedilmemis degisiklikler var.",
+                tabs[m_closeTabIdx].name.c_str());
+    ImGui::Text("  Kapatmadan once kaydetmek ister misiniz?");
+    ImGui::Dummy({ 0, 6 });
+    ImGui::Separator();
+    ImGui::Dummy({ 0, 4 });
+
+    // Ortak kapat lambdası
+    auto doClose = [&]() {
+        int idx = m_closeTabIdx;
+        m_closeTabIdx = -1;
+        tabs.erase(tabs.begin() + idx);
+        if (leftActive  >= (int)tabs.size()) leftActive  = (int)tabs.size() - 1;
+        if (rightActive >= (int)tabs.size()) rightActive = (int)tabs.size() - 1;
+        ImGui::CloseCurrentPopup();
+    };
+
+    if (ImGui::Button("Kaydet", { 90, 0 })) {
+        // Aktif panel o sekmeye yönlendir, kaydet
+        m_activePanel = 0;
+        leftActive    = m_closeTabIdx;
+
+        if (tabs[m_closeTabIdx].path.empty()) {
+            SaveActiveAs();                          // dosya adı seçme diyaloğu
+        } else {
+            std::string err;
+            tabs[m_closeTabIdx].Save(&err);
+            if (!err.empty()) statusMsg = err;
+        }
+
+        // Kayıt başarıldıysa (modified=false) kapat; diyalog iptal edilmişse aç bırak
+        if (!tabs[m_closeTabIdx].modified)
+            doClose();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Kaydetme", { 90, 0 })) {
+        doClose();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Iptal", { 70, 0 })) {
+        m_closeTabIdx = -1;
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::Dummy({ 0, 4 });
+    ImGui::EndPopup();
 }
 
 // ─── Çıkış onayı ─────────────────────────────────────────────────────────────

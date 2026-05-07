@@ -86,6 +86,10 @@ private:
     bool  m_showResults   = false;
     float m_resultsHeight = 160.0f;
 
+    // Sekme kapatma onay diyaloğu
+    int   m_closeTabIdx = -1;              // kapatılmayı bekleyen sekme (-1 = yok)
+    void  DrawCloseTabDialog();
+
     // Çıkış onay diyaloğu
     bool             m_exitConfirmOpen = false;
     std::vector<int> m_exitTabQueue;       // modified tab indeksleri (sırayla işlenecek)
