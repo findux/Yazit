@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#define YAZIT_VERSION "1.5.0"
+#define YAZIT_VERSION "1.5.1"
 
 struct SearchResult {
     int         tabIdx;
@@ -30,7 +30,7 @@ public:
     bool        wantFocusR  = false;
     bool        splitMode   = false;
     FindState   findState;
-    std::string statusMsg   = "Hazir.";
+    std::string statusMsg   = "Hazır.";
     HWND        hwnd        = nullptr;
     LuaEngine   luaEngine;
 

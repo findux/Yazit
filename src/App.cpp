@@ -1426,14 +1426,14 @@ void App::DrawResultsPanel() {
     // Başlık satırı
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
     ImGui::TextColored(ImVec4(0.45f, 0.80f, 1.0f, 1.0f),
-                       "  Arama Sonuclari  —  \"%s\"  —  %d eslesme",
+                       "  Arama Sonuçları  —  \"%s\"  —  %d eşleşme",
                        findState.find, (int)m_searchResults.size());
     ImGui::SameLine();
     if (ImGui::SmallButton("Temizle")) {
         m_searchResults.clear();
         memset(findState.msg, 0, sizeof(findState.msg));
     }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sonuclari temizle");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sonuçları temizle");
     ImGui::SameLine(ImGui::GetContentRegionAvail().x - 18);
     if (ImGui::SmallButton("X")) {
         m_showResults = false;
@@ -1443,11 +1443,11 @@ void App::DrawResultsPanel() {
     ImGui::Separator();
 
     if (m_searchResults.empty()) {
-        ImGui::TextDisabled("  Sonuc bulunamadi.");
+        ImGui::TextDisabled("  Sonuç bulunamadı.");
     } else {
         // Sütun başlıkları
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::Text("  %-30s  %6s   %s", "Dosya", "Satir", "Icerik");
+        ImGui::Text("  %-30s  %6s   %s", "Dosya", "Satır", "İçerik");
         ImGui::PopStyleColor();
         ImGui::Separator();
 
@@ -1492,7 +1492,7 @@ void App::NewTab() {
     tabs.emplace_back();
     leftActive = (int)tabs.size() - 1;
     wantFocusL = true;
-    statusMsg  = "Yeni dosya olusturuldu.";
+    statusMsg  = "Yeni dosya oluşturuldu.";
 }
 
 void App::OpenFile(const std::string& path) {
@@ -1500,7 +1500,7 @@ void App::OpenFile(const std::string& path) {
         if (tabs[i].path == path) {
             leftActive = i;
             wantFocusL = true;
-            statusMsg  = "Dosya zaten acik: " + path;
+            statusMsg  = "Dosya zaten açık: " + path;
             AddToRecentFiles(path);   // zaten açık olsa bile geçmişte üste taşı
             return;
         }
@@ -1568,7 +1568,7 @@ void App::SaveActive() {
             statusMsg = buf;
             if (!err.empty()) statusMsg += "  |  " + err;  // lossy uyarısı
         } else {
-            statusMsg = "HATA: " + (err.empty() ? "Kayit basarisiz." : err);
+            statusMsg = "HATA: " + (err.empty() ? "Kayıt başarısız." : err);
         }
     } else {
         SaveActiveAs();
@@ -1591,7 +1591,7 @@ void App::SaveActiveAs() {
             statusMsg = buf;
             if (!err.empty()) statusMsg += "  |  " + err;
         } else {
-            statusMsg = "HATA: " + (err.empty() ? "Kayit basarisiz." : err);
+            statusMsg = "HATA: " + (err.empty() ? "Kayıt başarısız." : err);
         }
     }
 }
