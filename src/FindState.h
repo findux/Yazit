@@ -26,6 +26,10 @@ public:
     bool wantFocusSearch = false;   // Ctrl+F'de arama kutusuna odak iste
     char msg[256]        = {};
 
+    // Arama geçmişi (en yeni başta, en fazla 20 kayıt)
+    std::vector<std::string> history;
+    void AddToHistory(const std::string& term);
+
     // Metin içinde tüm eşleşmeleri bul
     std::vector<Match> FindAll(const std::string& text) const;
 

@@ -865,13 +865,34 @@ void App::DrawFindWindow() {
     ImGui::Separator();
 
     const float labelW = 80.0f;
-    ImGui::Text("Bul:");     ImGui::SameLine(labelW); ImGui::SetNextItemWidth(300);
+    ImGui::Text("Bul:");     ImGui::SameLine(labelW); ImGui::SetNextItemWidth(270);
     if (ImGui::IsWindowAppearing() || findState.wantFocusSearch) {
         ImGui::SetKeyboardFocusHere();
         findState.wantFocusSearch = false;
     }
     bool enter = ImGui::InputText("##Find", findState.find, sizeof(findState.find),
                                   ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SameLine();
+    // ── Geçmiş açılır listesi ────────────────────────────────────────────────
+    bool hasHistory = !findState.history.empty();
+    if (!hasHistory) ImGui::BeginDisabled();
+    if (ImGui::SmallButton("▼##fhist"))
+        ImGui::OpenPopup("##FindHistPopup");
+    if (!hasHistory) ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Arama gecmisi");
+    if (ImGui::BeginPopup("##FindHistPopup")) {
+        ImGui::TextDisabled("Arama Gecmisi");
+        ImGui::Separator();
+        for (auto& h : findState.history) {
+            if (ImGui::Selectable(h.c_str())) {
+                snprintf(findState.find, sizeof(findState.find), "%s", h.c_str());
+                memset(findState.msg, 0, sizeof(findState.msg));
+                findState.wantFocusSearch = true;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
     ImGui::SameLine();
     if (ImGui::SmallButton("x##cf")) {
         memset(findState.find, 0, sizeof(findState.find));
@@ -919,9 +940,9 @@ void App::DrawFindWindow() {
             snprintf(findState.msg, sizeof(findState.msg), "%d yer degistirildi.", n);
         }
     }
-    if (ImGui::Button("Aktif Dosyada Bul")) SearchInTabs(true);
+    if (ImGui::Button("Aktif Dosyada Bul"))  { findState.AddToHistory(findState.find); SearchInTabs(true);  }
     ImGui::SameLine();
-    if (ImGui::Button("Tüm Dosyalarda Bul")) SearchInTabs(false);
+    if (ImGui::Button("Tüm Dosyalarda Bul")) { findState.AddToHistory(findState.find); SearchInTabs(false); }
     if (findState.msg[0]) {
         ImGui::Separator();
         ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "%s", findState.msg);

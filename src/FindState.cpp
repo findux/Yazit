@@ -30,6 +30,15 @@ size_t CoordToIdx(const std::string& t, TextEditor::Coordinates c, int tabSize) 
     return i;
 }
 
+void FindState::AddToHistory(const std::string& term) {
+    if (term.empty()) return;
+    // Zaten listede varsa çıkar (en üste taşımak için)
+    auto it = std::find(history.begin(), history.end(), term);
+    if (it != history.end()) history.erase(it);
+    history.insert(history.begin(), term);
+    if (history.size() > 20) history.resize(20);
+}
+
 std::vector<Match> FindState::FindAll(const std::string& text) const {
     std::vector<Match> res;
     if (!find[0]) return res;
@@ -73,6 +82,7 @@ static bool SelectMatch(EditorTab& tab, const Match& m, const std::string& txt) 
 }
 
 bool FindState::FindNext(EditorTab& tab, bool fwd) {
+    AddToHistory(find);
     auto txt = tab.editor.GetText();
     auto all = FindAll(txt);
     if (all.empty()) { snprintf(msg, sizeof(msg), "Bulunamadi."); return false; }
@@ -101,6 +111,7 @@ bool FindState::FindNext(EditorTab& tab, bool fwd) {
 }
 
 void FindState::ReplaceNext(EditorTab& tab) {
+    AddToHistory(find);
     auto sel = tab.editor.GetSelectedText();
     if (!FindAll(sel).empty()) {
         tab.editor.InsertTextAtCursor(replace);
@@ -110,6 +121,7 @@ void FindState::ReplaceNext(EditorTab& tab) {
 }
 
 int FindState::ReplaceAll(EditorTab& tab) {
+    AddToHistory(find);
     auto txt = tab.editor.GetText();
     auto all = FindAll(txt);
     for (int i = (int)all.size() - 1; i >= 0; i--)
