@@ -699,25 +699,45 @@ void App::DrawFoldIndicators(EditorTab& tab) {
 // ─── Otomatik tamamlama ───────────────────────────────────────────────────────
 
 static std::string GetPrefixAtCursor(const TextEditor& ed) {
+    // GetTextLines() tüm belgeyi kopyalar; mLines'a doğrudan erişerek
+    // sadece imleç satırını okuyoruz → O(1) bellek, sıfır tahsisat.
     auto cursor = ed.GetSanitizedCursorCoordinates();
-    auto lines  = ed.GetTextLines();
-    if (cursor.mLine >= (int)lines.size()) return {};
-    const std::string& line = lines[cursor.mLine];
+    if (cursor.mLine >= (int)ed.mLines.size()) return {};
+    const auto& glyphs = ed.mLines[cursor.mLine];
     int ci = ed.GetCharacterIndexL(cursor);
-    ci = std::min(ci, (int)line.size());
+    ci = std::min(ci, (int)glyphs.size());
     int s = ci;
-    while (s > 0 && (std::isalnum((unsigned char)line[s-1]) || line[s-1] == '_'))
+    while (s > 0 && (std::isalnum((unsigned char)glyphs[s-1].mChar) || glyphs[s-1].mChar == '_'))
         --s;
     if (s == ci) return {};
-    return line.substr(s, ci - s);
+    std::string prefix;
+    prefix.reserve(ci - s);
+    for (int i = s; i < ci; ++i)
+        prefix += glyphs[i].mChar;
+    return prefix;
 }
 
 void App::UpdateAutoComplete(EditorTab& tab) {
     const auto* lang = tab.editor.mLanguageDefinition;
     if (!lang) { m_ac = {}; return; }
 
+    bool textChanged = tab.editor.IsTextChanged();
+
+    // Sekme değişimi: kelime önbelleğini geçersiz kıl
+    if (tab.id != m_ac.lastTabId) {
+        m_ac.docWords.clear();
+        m_ac.lastCursorPos = { -1, -1 };
+        m_ac.lastTabId = tab.id;
+    }
+
+    // İmleç hareket etmediyse ve metin değişmediyse hiçbir şey yapma
+    auto curPos = tab.editor.GetSanitizedCursorCoordinates();
+    if (!textChanged && curPos == m_ac.lastCursorPos && !m_ac.docWords.empty())
+        return;
+    m_ac.lastCursorPos = curPos;
+
     // Belge değiştiyse kelime listesini yeniden tara
-    if (tab.editor.IsTextChanged() || m_ac.docWords.empty()) {
+    if (textChanged || m_ac.docWords.empty()) {
         m_ac.docWords.clear();
         std::string text = tab.editor.GetText();
         size_t i = 0;

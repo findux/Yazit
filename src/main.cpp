@@ -154,19 +154,29 @@ int main(int argc, char** argv) {
         if (wargv) LocalFree(wargv);
     }
 
+    // ── Ana render döngüsü (event-driven) ───────────────────────────────────────
+    // SDL_PollEvent yerine SDL_WaitEventTimeout kullanıyoruz:
+    //   • Olay yoksa 50 ms uyur → boşta CPU < %1
+    //   • Olay gelince anında uyandırır, kalan tüm olayları PollEvent ile drainler
+    //   • 50 ms timeout: imleç yanıp sönmesi için yeterli (~20 fps boşta)
+    //   • Yazarken olay seli gelir → döngü hemen dönüp vsync hızında render yapar
     bool running = true;
     while (running) {
         SDL_Event ev;
-        while (SDL_PollEvent(&ev)) {
-            ImGui_ImplSDL2_ProcessEvent(&ev);
-            if (ev.type == SDL_QUIT)
-                app.RequestExit(running);
-            // Not: SDL_DROPFILE artık WndProc tarafından ele alındığı için
-            // buraya ulaşmaz; ama yedek olarak bırakıyoruz.
-            else if (ev.type == SDL_DROPFILE && ev.drop.file) {
-                app.OpenFile(ev.drop.file);
-                SDL_free(ev.drop.file);
-            }
+        // En fazla 50 ms bekle (boşta ~20 fps; aktifken vsync hızına ulaşır)
+        if (SDL_WaitEventTimeout(&ev, 50)) {
+            // İlk olayı işle, ardından sıradaki tüm olayları drainle
+            do {
+                ImGui_ImplSDL2_ProcessEvent(&ev);
+                if (ev.type == SDL_QUIT)
+                    app.RequestExit(running);
+                // Not: SDL_DROPFILE artık WndProc tarafından ele alındığı için
+                // buraya ulaşmaz; ama yedek olarak bırakıyoruz.
+                else if (ev.type == SDL_DROPFILE && ev.drop.file) {
+                    app.OpenFile(ev.drop.file);
+                    SDL_free(ev.drop.file);
+                }
+            } while (SDL_PollEvent(&ev));
         }
 
         ImGui_ImplOpenGL3_NewFrame();

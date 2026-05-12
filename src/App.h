@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#define YAZIT_VERSION "1.4.2"
+#define YAZIT_VERSION "1.5.0"
 
 struct SearchResult {
     int         tabIdx;
@@ -109,6 +109,9 @@ private:
         bool        visible = false;
         std::string prefix;
         std::unordered_set<std::string> docWords;  // belge içinden taranan kelimeler
+        // Önbellek: imleç hareket etmemişse ve metin değişmemişse atla
+        TextEditor::Coordinates lastCursorPos = { -1, -1 };
+        int         lastTabId = -1;  // sekme değişimini tespit et
     };
     AutoComplete m_ac;
     void UpdateAutoComplete(EditorTab& tab);
