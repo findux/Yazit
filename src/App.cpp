@@ -1418,7 +1418,7 @@ void App::DrawResultsPanel() {
                 leftActive = r.tabIdx;
                 wantFocusL = true;
 
-                // İmleci satıra ve sütuna taşı, eşleşmeyi seç
+                // Eşleşmeyi seç ve görünür hale getir
                 auto& tab  = tabs[r.tabIdx];
                 std::string text = tab.editor.GetText();
                 int         ts   = tab.editor.GetTabSize();
@@ -1427,8 +1427,10 @@ void App::DrawResultsPanel() {
                     auto c = IdxToCoord(text, m.start, ts);
                     if (c.mLine == r.line && c.mColumn == r.col) {
                         auto e = IdxToCoord(text, m.start + m.len, ts);
+                        // SetSelection içinde SetCursorPosition(e) zaten var;
+                        // ardından tekrar SetCursorPosition çağırmak seçimi siler — çağırmıyoruz.
                         tab.editor.SetSelection(c, e);
-                        tab.editor.SetCursorPosition(c);
+                        tab.editor.SetViewAtLine(c.mLine, TextEditor::SetViewAtLineMode::Centered);
                         break;
                     }
                 }
