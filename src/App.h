@@ -118,6 +118,12 @@ private:
     void DrawAutoComplete(EditorTab& tab);
     void ApplyCompletion(EditorTab& tab, const std::string& word);
 
+    // Son açılan dosyalar geçmişi
+    std::vector<std::string> m_recentFiles;
+    void LoadRecentFiles();
+    void SaveRecentFiles();
+    void AddToRecentFiles(const std::string& path);
+
     // Dosya işlemleri (dialog açar)
     void OpenFileWithDialog();
     void SaveActive();

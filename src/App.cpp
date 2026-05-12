@@ -5,6 +5,7 @@
 #include <imgui_impl_opengl3.h>
 #include "imgui_impl_sdl2.h"
 #include <cstdio>
+#include <fstream>
 #include <set>
 #include <algorithm>
 
@@ -275,6 +276,9 @@ void App::Init(SDL_Window* window) {
 
     // Varsayılan tema uygula (sekme paletlerini de ayarlar)
     SetTheme(m_theme);
+
+    // Son açılan dosya geçmişini yükle
+    LoadRecentFiles();
 }
 
 // ─── Ana çizim döngüsü ───────────────────────────────────────────────────────
@@ -370,6 +374,26 @@ void App::DrawMenuBar(bool& running) {
         if (ImGui::MenuItem("Ac...",           "Ctrl+O"))       OpenFileWithDialog();
         if (ImGui::MenuItem("Kaydet",          "Ctrl+S"))       SaveActive();
         if (ImGui::MenuItem("Farkli Kaydet..","Ctrl+Shift+S"))  SaveActiveAs();
+        ImGui::Separator();
+        // ── Son Açılan Dosyalar ─────────────────────────────────────────────
+        bool hasRecent = !m_recentFiles.empty();
+        if (ImGui::BeginMenu("Son Açılan Dosyalar", hasRecent)) {
+            for (int ri = 0; ri < (int)m_recentFiles.size(); ri++) {
+                const std::string& rp   = m_recentFiles[ri];
+                std::string        name = EditorTab::Basename(rp);
+                char lbl[512];
+                snprintf(lbl, sizeof(lbl), "%d  %s", ri + 1, name.c_str());
+                if (ImGui::MenuItem(lbl)) OpenFile(rp);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("%s", rp.c_str());
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Gecmisi Temizle")) {
+                m_recentFiles.clear();
+                SaveRecentFiles();
+            }
+            ImGui::EndMenu();
+        }
         ImGui::Separator();
         for (int i = 0; i < (int)tabs.size(); i++) {
             char lbl[256];
@@ -1477,6 +1501,7 @@ void App::OpenFile(const std::string& path) {
             leftActive = i;
             wantFocusL = true;
             statusMsg  = "Dosya zaten acik: " + path;
+            AddToRecentFiles(path);   // zaten açık olsa bile geçmişte üste taşı
             return;
         }
     }
@@ -1486,6 +1511,44 @@ void App::OpenFile(const std::string& path) {
     leftActive = (int)tabs.size() - 1;
     wantFocusL = true;
     statusMsg  = "Açıldı: " + path;
+    AddToRecentFiles(path);
+}
+
+// ─── Son açılan dosyalar geçmişi ─────────────────────────────────────────────
+static std::string GetAppDataDir() {
+    char buf[MAX_PATH] = {};
+    GetEnvironmentVariableA("APPDATA", buf, MAX_PATH);
+    return std::string(buf) + "\\YAZIT";
+}
+
+void App::LoadRecentFiles() {
+    std::string filePath = GetAppDataDir() + "\\recent_files.txt";
+    std::ifstream f(filePath);
+    if (!f.is_open()) return;
+    std::string line;
+    while (std::getline(f, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty()) m_recentFiles.push_back(line);
+    }
+}
+
+void App::SaveRecentFiles() {
+    std::string dir      = GetAppDataDir();
+    std::string filePath = dir + "\\recent_files.txt";
+    CreateDirectoryA(dir.c_str(), nullptr);   // klasör yoksa oluştur
+    std::ofstream f(filePath, std::ios::trunc);
+    for (auto& p : m_recentFiles)
+        f << p << "\n";
+}
+
+void App::AddToRecentFiles(const std::string& path) {
+    if (path.empty()) return;
+    // Varsa listeden çıkar, en üste ekle
+    auto it = std::find(m_recentFiles.begin(), m_recentFiles.end(), path);
+    if (it != m_recentFiles.end()) m_recentFiles.erase(it);
+    m_recentFiles.insert(m_recentFiles.begin(), path);
+    if (m_recentFiles.size() > 20) m_recentFiles.resize(20);
+    SaveRecentFiles();
 }
 
 // ─── Dosya dialogları ─────────────────────────────────────────────────────────
