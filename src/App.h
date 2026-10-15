@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#define YAZIT_VERSION "1.5.1"
+#define YAZIT_VERSION "1.5.2"
 
 struct SearchResult {
     int         tabIdx;
