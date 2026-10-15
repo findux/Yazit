@@ -595,7 +595,10 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
 
         // Otomatik tamamlama tuş olaylarını Render'dan önce yakala
         bool editorFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
-        if (m_ac.visible && editorFocused) {
+        tab.editor.mExternalUpHandled = false;
+        tab.editor.mExternalDownHandled = false;
+        tab.editor.mExternalTabHandled = false;
+        if (m_ac.visible && m_ac.lastTabId == tab.id && editorFocused) {
             if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, true)) {
                 m_ac.sel = (m_ac.sel - 1 + (int)m_ac.items.size()) % (int)m_ac.items.size();
                 tab.editor.mExternalUpHandled = true;
@@ -611,11 +614,13 @@ void App::DrawPanel(const char* uid, int& active, ImVec2 size, bool& wantFocus) 
             }
         }
 
-        tab.editor.Render("##Ed", false, ImGui::GetContentRegionAvail());
+        bool textEditorFocused = tab.editor.Render("##Ed", false, ImGui::GetContentRegionAvail());
         if (tab.editor.IsTextChanged()) tab.modified = true;
         DrawFoldIndicators(tab);
-        UpdateAutoComplete(tab);
-        DrawAutoComplete(tab);
+        if (textEditorFocused) {
+            UpdateAutoComplete(tab);
+            DrawAutoComplete(tab);
+        }
     }
 
     ImGui::EndChild();
@@ -749,15 +754,18 @@ void App::UpdateAutoComplete(EditorTab& tab) {
 
     // Sekme değişimi: kelime önbelleğini geçersiz kıl
     if (tab.id != m_ac.lastTabId) {
-        m_ac.docWords.clear();
-        m_ac.lastCursorPos = { -1, -1 };
+        m_ac = {};
         m_ac.lastTabId = tab.id;
     }
 
-    // İmleç hareket etmediyse ve metin değişmediyse hiçbir şey yapma
+    // Gezinme öneri açmaz; Escape sonrası yeni düzenlemeye kadar kapalı kalır.
     auto curPos = tab.editor.GetSanitizedCursorCoordinates();
-    if (!textChanged && curPos == m_ac.lastCursorPos && !m_ac.docWords.empty())
+    if (!textChanged) {
+        if (curPos != m_ac.lastCursorPos)
+            m_ac.visible = false;
+        m_ac.lastCursorPos = curPos;
         return;
+    }
     m_ac.lastCursorPos = curPos;
 
     // Belge değiştiyse kelime listesini yeniden tara
